@@ -14,7 +14,7 @@ await page.addInitScript(() =>
 );
 await page.goto(`http://localhost:3000${path}`, { waitUntil: "networkidle" });
 if (flags.includes("--scan")) {
-  await page.getByRole("button", { name: "Scan" }).click();
+  await page.getByRole("button", { name: /^(Scan|Find deals)$/ }).click();
   await page.waitForSelector("table tbody tr", { timeout: 60_000 });
 }
 if (flags.includes("--click-first-row")) {
