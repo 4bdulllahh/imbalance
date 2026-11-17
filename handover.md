@@ -88,6 +88,7 @@ next to it.
 ```
 node tools/screenshot.mjs <outDir> tradeups --scan --click-first-row
 node tools/screenshot.mjs <outDir> deals --scan --click=Chart --width=390
+node tools/screenshot.mjs <outDir> tracker --light
 ```
 
 Pass page names without a leading slash (Git Bash rewrites `/deals`). If the dev overlay
@@ -116,17 +117,19 @@ POSTs from curl need `-H "Origin: http://localhost:3000"`.
 | M14 | Timeline, cooldowns, "come back on", next steps                                | M    | ✅ done |
 | M15 | AI advisor (Gemini / OpenRouter / Groq, user keys)                             | M    | ✅ done |
 | M16 | Ask box: plain English to filters                                              | S    | partial |
-| M17 | Design pass: taste-skill, then impeccable                                      | M    | next    |
-| M18 | Ready for friends: full README, fresh-clone test                               | S    |         |
+| M17 | Design pass: taste-skill, then impeccable                                      | M    | ✅ done |
+| M18 | Ready for friends: full README, fresh-clone test                               | S    | ✅ done |
 
 ## Current state
 
-- **Last done:** M12 to M16. 82 tests pass. Tracker checked live (add, delete, origin block,
-  migration v1 to v2 on a real database). AI checked only without keys (error messages).
-- **M16 is partial:** the Dashboard ask box answers questions with tracker context. Turning
-  plain English into page filters ("restricted contracts under $20") is not built. Pages
-  would need to read their filters from the URL first.
-- **Next:** M17 design pass (taste-skill, then impeccable), then M18 ready for friends.
+- **Last done:** M17 (logo, warm brass theme) and M18 (full README, fresh-clone test: clean
+  clone, `npm ci`, no keys, catalog and price sync, scans and every page work). 82 tests pass.
+  All planned milestones are done except the second half of M16.
+- **Next:** pick from `docs/roadmap.md`. Smallest: ask box sets page filters from plain
+  English (pages must read filters from the URL first). taste-skill and impeccable were not
+  installed, so M17 was done by hand; run them later if wanted.
+- **Logo:** `src/app/icon.svg` (favicon) and `public/logo.svg` (header, README) are the same
+  file. Edit both.
 - **AI:** provider order Gemini, Groq, OpenRouter (first saved key wins). The model comes
   from the provider's live `/models` list via `pickModel` (cached a day), so renamed
   models don't break it. The AI gets only app-computed numbers and is told never to do maths.
