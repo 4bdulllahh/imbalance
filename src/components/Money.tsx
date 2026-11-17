@@ -7,7 +7,8 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { formatIn, type Rates } from "@/lib/currency";
+import type { Rates } from "@/lib/currency";
+import { formatIn } from "@/lib/format";
 
 const STORAGE = "imbalance-currency";
 const COMMON = [

@@ -7,6 +7,7 @@ import { CurrencyPicker } from "./Money";
 
 const LINKS = [
   { href: "/", label: "Dashboard" },
+  { href: "/tradeups", label: "Trade-ups" },
   { href: "/catalog", label: "Skins" },
 ];
 

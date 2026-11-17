@@ -12,13 +12,18 @@ type PriceRow = {
   quantity: number;
   median_7d: number | null;
   volume_7d: number | null;
+  median_30d: number | null;
+  volume_30d: number | null;
+  median_90d: number | null;
+  volume_90d: number | null;
 };
 
 /** Skinport prices keyed by "name|version". */
 function loadPrices(db: DatabaseSync) {
   const rows = db
     .prepare(
-      `SELECT p.market_hash_name, p.version, p.min_cents, p.quantity, h.median_7d, h.volume_7d
+      `SELECT p.market_hash_name, p.version, p.min_cents, p.quantity, h.median_7d, h.volume_7d,
+              h.median_30d, h.volume_30d, h.median_90d, h.volume_90d
        FROM prices p LEFT JOIN price_history h
          ON h.market_hash_name = p.market_hash_name AND h.source = p.source AND h.version = p.version
        WHERE p.source = 'skinport'`,
@@ -28,12 +33,14 @@ function loadPrices(db: DatabaseSync) {
 }
 
 /**
- * What a skin really sells for: the 7-day median sale when it trades often enough,
- * otherwise the lowest listing. Sales are a truer price than hopeful listings.
+ * What a skin really sells for: the most recent sales median with at least 3 sales
+ * (7, then 30, then 90 days), otherwise the lowest listing. Sales beat hopeful listings.
  */
 export function sellPrice(r: PriceRow | undefined): number | null {
   if (!r) return null;
   if (r.median_7d != null && (r.volume_7d ?? 0) >= 3) return r.median_7d;
+  if (r.median_30d != null && (r.volume_30d ?? 0) >= 3) return r.median_30d;
+  if (r.median_90d != null && (r.volume_90d ?? 0) >= 3) return r.median_90d;
   return r.min_cents;
 }
 
@@ -115,9 +122,9 @@ export function loadTierData(db: DatabaseSync, tier: Tier, variant: Variant) {
       `${marketHashName(skin.name, wear, variant)}|${skin.phase ?? ""}`,
     );
   const price: PriceFn = (skin, wear) => sellPrice(priceRow(skin, wear));
-  /** Sales in the last 7 days: low numbers mean the price may be fake or hard to sell at. */
-  const volume7d = (skin: OutcomeSkin, wear: WearName | null) =>
-    priceRow(skin, wear)?.volume_7d ?? 0;
+  /** Sales in the last 30 days: low numbers mean the price may be fake or hard to sell at. */
+  const volume30d = (skin: OutcomeSkin, wear: WearName | null) =>
+    priceRow(skin, wear)?.volume_30d ?? 0;
 
   const inputRows = db
     .prepare(
@@ -161,7 +168,7 @@ export function loadTierData(db: DatabaseSync, tier: Tier, variant: Variant) {
     options: cheapestPerCollectionWear(options),
     outcomes,
     price,
-    volume7d,
+    volume30d,
   };
 }
 

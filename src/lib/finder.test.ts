@@ -159,7 +159,7 @@ describe("loadTierData", () => {
     expect(d.price(outSkin, "Field-Tested")).toBe(3000);
   });
 
-  it("prefers the 7-day median when the skin sells often", () => {
+  it("uses the most recent sales median with enough sales", () => {
     const row = {
       market_hash_name: "x",
       version: "",
@@ -167,9 +167,17 @@ describe("loadTierData", () => {
       quantity: 1,
       median_7d: 90,
       volume_7d: 5,
+      median_30d: 80,
+      volume_30d: 10,
+      median_90d: 70,
+      volume_90d: 30,
     };
     expect(sellPrice(row)).toBe(90);
-    expect(sellPrice({ ...row, volume_7d: 1 })).toBe(100);
+    expect(sellPrice({ ...row, volume_7d: 1 })).toBe(80);
+    expect(sellPrice({ ...row, volume_7d: 1, volume_30d: 2 })).toBe(70);
+    expect(
+      sellPrice({ ...row, volume_7d: 0, volume_30d: 0, volume_90d: 2 }),
+    ).toBe(100);
     expect(sellPrice(undefined)).toBeNull();
   });
 });

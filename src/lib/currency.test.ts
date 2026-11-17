@@ -1,6 +1,7 @@
 import { describe, expect, it, vi, afterEach } from "vitest";
 import { openDb } from "./db";
-import { formatIn, getRates, RATES_MAX_AGE_MS } from "./currency";
+import { getRates, RATES_MAX_AGE_MS } from "./currency";
+import { formatIn } from "./format";
 
 afterEach(() => vi.unstubAllGlobals());
 

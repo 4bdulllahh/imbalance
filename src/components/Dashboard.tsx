@@ -70,8 +70,8 @@ export function Dashboard() {
       <div>
         <h1 className="text-2xl font-bold">Dashboard</h1>
         <p className="text-sm text-muted">
-          Update the skin list and prices, then browse skins. Trade-up finding
-          comes next.
+          Update the skin list and prices, then scan for trade-ups. Deals and
+          charts comes next.
         </p>
       </div>
 
