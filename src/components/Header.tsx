@@ -25,7 +25,12 @@ export function Header() {
   return (
     <header className="border-b border-line bg-panel">
       <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3">
-        <Link href="/" className="text-lg font-bold tracking-tight">
+        <Link
+          href="/"
+          className="flex items-center gap-2 text-lg font-extrabold tracking-tight"
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element -- tiny local SVG, no optimizing needed */}
+          <img src="/logo.svg" alt="" width={32} height={32} />
           Imbalance
         </Link>
         <nav aria-label="Main" className="flex gap-4 text-sm">
