@@ -129,8 +129,21 @@ POSTs from curl need `-H "Origin: http://localhost:3000"`.
   the JSON with zod, and the page opens with filters in the URL (`/tradeups?tier=...&max=20`).
   Trade-ups and Deals read them with `useSearchParams` inside `<Suspense>`. Amounts stay in the
   shown currency; the user clicks Scan, so exchange rates are loaded before converting.
-- **Next:** pick from `docs/roadmap.md`. taste-skill and impeccable were not installed, so
-  M17 was done by hand; run them later if wanted.
+- **After M18 (2026-11-17):**
+  - A one-click `Start Imbalance.bat` was built, then removed at the owner's request: keep
+    setup to `npm install` and `npm start`. Don't bring it back unless asked.
+  - `npm start` is `next build && next start -H localhost`. A cached rebuild takes ~6 s,
+    then pages answer in 5 to 20 ms (dev mode: 150 to 1500 ms per first visit on the E: drive).
+  - The keys popup scrolled twice; `<dialog>` is now `overflow-hidden` and only the inner
+    div scrolls. `color-scheme` plus a thin themed scrollbar in `globals.css`.
+  - `npm audit` shows 16 high: all one `picomatch` ReDoS (<=4.0.7) in eslint and vitest
+    deps only. No fixed version exists yet. Never run `npm audit fix --force` (it downgrades
+    eslint-config-next and vitest). Recheck when picomatch 4.0.8+ ships.
+  - Windows PowerShell blocks `npm.ps1` by default: README tells friends to use `npm.cmd`
+    or `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`.
+- **Next:** the owner continues tomorrow. Open items: test the AI (Find box, Ask AI) and
+  CSFloat with real keys, then pick from `docs/roadmap.md`. taste-skill and impeccable were
+  not installed, so M17 was done by hand; run them later if wanted.
 - **Logo:** `src/app/icon.svg` (favicon) and `public/logo.svg` (header, README) are the same
   file. Edit both.
 - **AI:** provider order Gemini, Groq, OpenRouter (first saved key wins). The model comes
@@ -142,5 +155,5 @@ POSTs from curl need `-H "Origin: http://localhost:3000"`.
 - **Known issues:** AI calls untested with real keys. CSFloat response shape not checked
   against a real key. Key guide steps for CSFloat are from memory. Sell prices are
   Skinport-based even when "Sell on Steam" is picked. After many hot reloads the dev page
-  can loop on full reloads: kill node, delete `.next`, restart.
+  can loop on full reloads: kill node, delete `.next`, restart (`npm start` is not affected).
 - **Not pushed:** see `git log origin/main..main`.
