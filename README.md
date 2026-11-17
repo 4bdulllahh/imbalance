@@ -27,46 +27,46 @@ on your PC.
 
 Prices show in your currency (pick it in the header). Dark and light themes.
 
-## How to run it
+## How to run it (Windows, the easy way)
 
-### 1. Install the tools (once)
+1. **Download:** on this GitHub page click the green **Code** button, then **Download ZIP**.
+2. **Unzip:** right-click the ZIP, pick **Extract All**, and open the extracted folder.
+3. **Start:** double-click **`Start Imbalance.bat`**.
+   - If Windows says "Windows protected your PC", click **More info**, then **Run anyway**.
+     It shows this for any downloaded script.
+   - If you don't have Node.js, it offers to install it for you. Say yes, wait, then
+     double-click `Start Imbalance.bat` again.
+   - The first start installs and builds the app, which takes a few minutes. After that it
+     opens in a couple of seconds.
+4. Imbalance opens in its own window. **Close that window to stop it.** To use it again,
+   double-click `Start Imbalance.bat` again.
 
-- **Node.js 24 or newer:** download the LTS installer from [nodejs.org](https://nodejs.org).
-- **Git:** download it from [git-scm.com](https://git-scm.com).
+**First time in the app:** a popup lists the optional API keys (you can close it and add them
+later, see below). On the **Dashboard** click **Update skin list**, then **Update prices**. Then
+open **Trade-ups**, pick a rarity and click **Scan**.
 
-Check both work by opening a terminal (on Windows: PowerShell or Windows Terminal) and running:
+**Updating:** download the new ZIP and extract it, then copy two things from your old folder
+into the new one: the `data` folder (your tracker and saved prices) and the `.env.local` file
+(your keys). Start the new one with `Start Imbalance.bat`. It rebuilds once by itself.
 
-```
-node -v
-git --version
-```
+### Other ways to run it
 
-`node -v` must print `v24` or higher.
-
-### 2. Download and start Imbalance
+With Git (updates with one command, and works on macOS and Linux too). Needs
+[Node.js 24 or newer](https://nodejs.org) and [Git](https://git-scm.com):
 
 ```
 git clone https://github.com/4bdulllahh/imbalance.git
 cd imbalance
-npm install
-npm run dev
+node tools/launch.mjs
 ```
 
-Leave that terminal open while you use the app. Then open **http://localhost:3000** in your
-browser. To stop it, press `Ctrl+C` in the terminal. To start it again later, open a terminal
-in the `imbalance` folder and run `npm run dev`.
+`node tools/launch.mjs` does the same as the `.bat`: installs, builds, starts and opens the app.
+To update, run `git pull` in the folder, then start it again. Your data is kept.
 
-### 3. First run
-
-1. A popup lists the optional API keys. You can close it and add keys later (see below).
-2. On the **Dashboard**, click **Update skin list**, then **Update prices**. Both take a few
-   seconds. Prices can be updated again every 5 minutes (Skinport's limit).
-3. Open **Trade-ups**, pick a rarity and click **Scan**.
-
-### Updating
-
-In the `imbalance` folder run `git pull`, then `npm install`. Your tracker and saved prices
-are kept.
+For development with live reload, use `npm install` then `npm run dev` and open
+http://localhost:3000. On Windows PowerShell, if `npm` says "running scripts is disabled on
+this system", type `npm.cmd` instead of `npm` (for example `npm.cmd install`), or run
+`Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` once.
 
 ## Setting up the API keys
 
@@ -145,12 +145,13 @@ The AI only comments on numbers Imbalance worked out. It never does the maths.
 
 ## Troubleshooting
 
-| Problem                                            | Fix                                                                       |
-| -------------------------------------------------- | ------------------------------------------------------------------------- |
-| `npm install` fails, or `node:sqlite` is not found | Run `node -v`. You need version 24 or newer                               |
-| Port 3000 is in use                                | Close the other app, or run `npx next dev -H localhost -p 3001`           |
-| Page stuck on "Loading" or keeps reloading         | Stop the app (Ctrl+C), delete the `.next` folder, run `npm run dev` again |
-| "Too many requests"                                | Skinport allows about 8 requests per 5 minutes. Wait and try again        |
+| Problem                                            | Fix                                                                                                     |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| "running scripts is disabled on this system"       | Use `Start Imbalance.bat`, or type `npm.cmd` instead of `npm` in PowerShell                             |
+| `npm install` fails, or `node:sqlite` is not found | Run `node -v`. You need version 24 or newer                                                             |
+| Port 3000 is in use (with `npm run dev`)           | Close the other app, or run `npx next dev -H localhost -p 3001`. The `.bat` picks a free port by itself |
+| Page stuck on "Loading" or keeps reloading         | Close the app, delete the `.next` folder, start it again                                                |
+| "Too many requests"                                | Skinport allows about 8 requests per 5 minutes. Wait and try again                                      |
 
 ## Privacy
 

@@ -28,34 +28,36 @@ npm run dev        # http://localhost:3000 (bound to localhost only)
 
 ## How the code is organised
 
-| Folder / file                | What's in it                                                                                               |
-| ---------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| `src/lib/db.ts`              | `node:sqlite` connection, `MIGRATIONS` list, `PRAGMA user_version`, meta helpers                           |
-| `src/lib/catalog.ts`         | ByMykel skins, collections, crates (zod) into `skins`, `skin_collections`, `rare_pool`                     |
-| `src/lib/prices/skinport.ts` | Skinport items + sales history, snapshots every 6 h (weapon skins only)                                    |
-| `src/lib/prices/csfloat.ts`  | CSFloat listings with floats, cached 10 min in `listings`                                                  |
-| `src/lib/keys.ts`            | Key guide data (`KEY_DEFS`), read/write `.env.local`                                                       |
-| `src/lib/queries.ts`         | Status, catalog search, skin detail with prices per wear                                                   |
-| `src/lib/wear.ts`            | Wear tiers, `wearForFloat`, `marketHashName`, `toCents`                                                    |
-| `src/lib/http.ts`            | `fetchJson` with timeout, zod check and plain-English errors                                               |
-| `src/lib/same-origin.ts`     | Blocks POSTs from other websites                                                                           |
-| `src/lib/currency.ts`        | Daily FX rates (open.er-api.com) cached in `meta`. `formatIn` lives in `format.ts`                         |
-| `src/lib/fees.ts`            | Marketplaces and net-after-fee (Steam per-fee rounding, Skinport 8%, CSFloat 2%)                           |
-| `src/lib/tradeup.ts`         | Pure maths: pool odds, normalized floats, wear, EV, ROI, odds to profit                                    |
-| `src/lib/tradeup-data.ts`    | Loads input options, outcome pools, `sellPrice` (7/30/90-day median) and 30d volume                        |
-| `src/lib/finder.ts`          | Target + filler mixes (1..N-1), listing quantity check, budget                                             |
-| `src/lib/risk.ts`            | Risky = missing prices, or >25% of EV from skins sold under 3 times in 30 days                             |
-| `src/lib/deals.ts`           | Items under their 30-day median that flip for profit, with trend signal                                    |
-| `src/lib/trend.ts`           | `classifyTrend` (dip, rebounding, falling, rising), snapshot series and pruning                            |
-| `src/lib/prices/steam.ts`    | Steam priceoverview per item on demand, cached 10 min as source `steam`                                    |
-| `src/lib/special-float.ts`   | `floatFlags`: 0.00x, best of a wear, lowest/highest possible                                               |
-| `src/lib/tracker.ts`         | Holdings (buy, sell, trade-up), settings (hold days, sell market), portfolio, backup/restore               |
-| `src/lib/timeline.ts`        | `daysToSell`, `contractTimeline`, `nextSteps` (sell, hold, wait, come back on)                             |
-| `src/lib/filters.ts`         | Plain-English search: filters schema, AI prompt, URL build and read back                                   |
-| `src/lib/ai.ts`              | User-key AI: picks provider and model from the live model list, `SYSTEM_PROMPT`, `askAi`                   |
-| `src/app/api/*`              | status, sync/*, skins, keys, listings, currency, tradeups, deals, steam-price, history, tracker, names, ai |
-| `src/components/`            | Header, KeysModal, Money, Dashboard, Catalog, TradeUps, Deals, PriceHistory, Tracker, AskAi, FloatBadges   |
-| `tools/screenshot.mjs`       | playwright-core + installed Edge screenshots, see Checking your work                                       |
+| Folder / file                | What's in it                                                                                                                                                                                                  |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/lib/db.ts`              | `node:sqlite` connection, `MIGRATIONS` list, `PRAGMA user_version`, meta helpers                                                                                                                              |
+| `src/lib/catalog.ts`         | ByMykel skins, collections, crates (zod) into `skins`, `skin_collections`, `rare_pool`                                                                                                                        |
+| `src/lib/prices/skinport.ts` | Skinport items + sales history, snapshots every 6 h (weapon skins only)                                                                                                                                       |
+| `src/lib/prices/csfloat.ts`  | CSFloat listings with floats, cached 10 min in `listings`                                                                                                                                                     |
+| `src/lib/keys.ts`            | Key guide data (`KEY_DEFS`), read/write `.env.local`                                                                                                                                                          |
+| `src/lib/queries.ts`         | Status, catalog search, skin detail with prices per wear                                                                                                                                                      |
+| `src/lib/wear.ts`            | Wear tiers, `wearForFloat`, `marketHashName`, `toCents`                                                                                                                                                       |
+| `src/lib/http.ts`            | `fetchJson` with timeout, zod check and plain-English errors                                                                                                                                                  |
+| `src/lib/same-origin.ts`     | Blocks POSTs from other websites                                                                                                                                                                              |
+| `src/lib/currency.ts`        | Daily FX rates (open.er-api.com) cached in `meta`. `formatIn` lives in `format.ts`                                                                                                                            |
+| `src/lib/fees.ts`            | Marketplaces and net-after-fee (Steam per-fee rounding, Skinport 8%, CSFloat 2%)                                                                                                                              |
+| `src/lib/tradeup.ts`         | Pure maths: pool odds, normalized floats, wear, EV, ROI, odds to profit                                                                                                                                       |
+| `src/lib/tradeup-data.ts`    | Loads input options, outcome pools, `sellPrice` (7/30/90-day median) and 30d volume                                                                                                                           |
+| `src/lib/finder.ts`          | Target + filler mixes (1..N-1), listing quantity check, budget                                                                                                                                                |
+| `src/lib/risk.ts`            | Risky = missing prices, or >25% of EV from skins sold under 3 times in 30 days                                                                                                                                |
+| `src/lib/deals.ts`           | Items under their 30-day median that flip for profit, with trend signal                                                                                                                                       |
+| `src/lib/trend.ts`           | `classifyTrend` (dip, rebounding, falling, rising), snapshot series and pruning                                                                                                                               |
+| `src/lib/prices/steam.ts`    | Steam priceoverview per item on demand, cached 10 min as source `steam`                                                                                                                                       |
+| `src/lib/special-float.ts`   | `floatFlags`: 0.00x, best of a wear, lowest/highest possible                                                                                                                                                  |
+| `src/lib/tracker.ts`         | Holdings (buy, sell, trade-up), settings (hold days, sell market), portfolio, backup/restore                                                                                                                  |
+| `src/lib/timeline.ts`        | `daysToSell`, `contractTimeline`, `nextSteps` (sell, hold, wait, come back on)                                                                                                                                |
+| `src/lib/filters.ts`         | Plain-English search: filters schema, AI prompt, URL build and read back                                                                                                                                      |
+| `src/lib/ai.ts`              | User-key AI: picks provider and model from the live model list, `SYSTEM_PROMPT`, `askAi`                                                                                                                      |
+| `src/app/api/*`              | status, sync/*, skins, keys, listings, currency, tradeups, deals, steam-price, history, tracker, names, ai                                                                                                    |
+| `src/components/`            | Header, KeysModal, Money, Dashboard, Catalog, TradeUps, Deals, PriceHistory, Tracker, AskAi, FloatBadges                                                                                                      |
+| `Start Imbalance.bat`        | Double-click start for Windows: installs Node via winget if missing, then runs `tools/launch.mjs`                                                                                                             |
+| `tools/launch.mjs`           | Installs when the lockfile changed, builds when code changed (stamp in `.next`), `next start` on a free port, opens an Edge/Chrome app window with profile `data/app-window`, stops the server when it closes |
+| `tools/screenshot.mjs`       | playwright-core + installed Edge screenshots, see Checking your work                                                                                                                                          |
 
 Pages are client components that call the API routes. Logic stays in `src/lib/` with tests
 next to it.
@@ -128,6 +130,9 @@ POSTs from curl need `-H "Origin: http://localhost:3000"`.
   the JSON with zod, and the page opens with filters in the URL (`/tradeups?tier=...&max=20`).
   Trade-ups and Deals read them with `useSearchParams` inside `<Suspense>`. Amounts stay in the
   shown currency; the user clicks Scan, so exchange rates are loaded before converting.
+- **Friends start the app** with `Start Imbalance.bat` (ZIP download, no git needed). It runs a
+  production build, so the dev reload-loop problem doesn't affect them. `.bat` files must keep
+  CRLF line endings (`.gitattributes`).
 - **Next:** pick from `docs/roadmap.md`. taste-skill and impeccable were not installed, so
   M17 was done by hand; run them later if wanted.
 - **Logo:** `src/app/icon.svg` (favicon) and `public/logo.svg` (header, README) are the same
