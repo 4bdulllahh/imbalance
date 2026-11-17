@@ -4,20 +4,38 @@ import Image from "next/image";
 import { useState } from "react";
 import type { Deal } from "@/lib/deals";
 import type { SteamPrice } from "@/lib/prices/steam";
-import { MARKETPLACES, steamNet, type MarketplaceId } from "@/lib/fees";
+import {
+  isMarketplaceId,
+  MARKETPLACES,
+  steamNet,
+  type MarketplaceId,
+} from "@/lib/fees";
 import { useMoney } from "./Money";
 import { AskAi } from "./AskAi";
+import { useSearchParams } from "next/navigation";
+import { urlFlag, urlNumber } from "@/lib/filters";
 import { PriceHistory, TrendBadge } from "./PriceHistory";
 
 export function Deals() {
   const { money, rates, currency } = useMoney();
-  const [market, setMarket] = useState<MarketplaceId>("skinport");
-  const [minDiscount, setMinDiscount] = useState("10");
-  const [minVolume, setMinVolume] = useState("10");
-  const [max, setMax] = useState("");
-  const [q, setQ] = useState("");
-  const [weapons, setWeapons] = useState(true);
-  const [dips, setDips] = useState(false);
+  // Filters can arrive in the URL from the Dashboard's plain-English search.
+  const params = useSearchParams();
+  const [market, setMarket] = useState<MarketplaceId>(() => {
+    const m = params.get("market");
+    return m && isMarketplaceId(m) ? m : "skinport";
+  });
+  const [minDiscount, setMinDiscount] = useState(() =>
+    urlNumber(params, "minDiscount", "10"),
+  );
+  const [minVolume, setMinVolume] = useState(() =>
+    urlNumber(params, "minVolume", "10"),
+  );
+  const [max, setMax] = useState(() => urlNumber(params, "max", ""));
+  const [q, setQ] = useState(() => params.get("q")?.slice(0, 100) ?? "");
+  const [weapons, setWeapons] = useState(() =>
+    urlFlag(params, "weapons", true),
+  );
+  const [dips, setDips] = useState(() => urlFlag(params, "dips", false));
   const [chart, setChart] = useState<Deal | null>(null);
   const [state, setState] = useState<{
     loading: boolean;
@@ -64,6 +82,13 @@ export function Deals() {
           keep after reselling at the usual price and paying the fee.
         </p>
       </div>
+
+      {params.size > 0 && !state.deals && (
+        <p role="status" className="panel border-accent p-3 text-sm">
+          Filters set from your search. Check them, then click{" "}
+          <strong>Find deals</strong>.
+        </p>
+      )}
 
       <div className="flex flex-wrap items-end gap-3 text-sm">
         <label className="flex flex-col gap-1">

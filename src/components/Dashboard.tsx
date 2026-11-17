@@ -6,6 +6,7 @@ import type { Status } from "@/lib/queries";
 import type { NextStep } from "@/lib/timeline";
 import { NextSteps } from "./Tracker";
 import { AskAi } from "./AskAi";
+import { PlainSearch } from "./PlainSearch";
 import { formatAgo } from "@/lib/format";
 
 type FullStatus = Status & {
@@ -83,9 +84,11 @@ export function Dashboard() {
       <section className="panel space-y-2 p-4">
         <h2 className="font-semibold">Ask the AI</h2>
         <p className="text-sm text-muted">
-          Uses your own Gemini, Groq or OpenRouter key and sees what is in your
-          Tracker. For a trade-up or deal, open it and ask from there.
+          Uses your own Gemini, Groq or OpenRouter key. Describe what to find
+          and it opens the right page with the filters set, or ask a question
+          about your Tracker below.
         </p>
+        <PlainSearch />
         <AskAi
           topic="question"
           needsQuestion

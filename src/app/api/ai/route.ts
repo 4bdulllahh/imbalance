@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { askAi } from "@/lib/ai";
+import { filtersUrl, FILTERS_PROMPT, parseFilters } from "@/lib/filters";
 import { getDb } from "@/lib/db";
 import { isSameOrigin } from "@/lib/same-origin";
 import { nextSteps } from "@/lib/timeline";
@@ -7,13 +8,13 @@ import { listHoldings, portfolio } from "@/lib/tracker";
 import { errorResponse, forbidden } from "../errors";
 
 const bodySchema = z.object({
-  topic: z.enum(["contract", "deal", "question"]),
+  topic: z.enum(["contract", "deal", "question", "filters"]),
   question: z.string().trim().max(1000).default(""),
   /** Numbers the page already computed (a contract or a deal). Passed through as JSON. */
   data: z.unknown().optional(),
 });
 
-const TOPIC_INTRO = {
+const TOPIC_INTRO: Record<"contract" | "deal" | "question", string> = {
   contract:
     "Here is a trade-up contract the app found. Comment on whether it is worth doing.",
   deal: "Here is a skin the app flagged as cheap. Comment on whether it is worth buying to flip.",
@@ -47,6 +48,18 @@ export async function POST(req: Request) {
     const parsed = bodySchema.safeParse(await req.json());
     if (!parsed.success) throw new Error("Type a question first.");
     const { topic, question, data } = parsed.data;
+    if (topic === "filters") {
+      if (!question) throw new Error("Type what you are looking for first.");
+      const filters = parseFilters(
+        (await askAi(question, FILTERS_PROMPT)).text,
+      );
+      const url = filters && filtersUrl(filters);
+      if (!url)
+        throw new Error(
+          "That doesn't sound like a trade-up or deal search. Try Ask instead.",
+        );
+      return Response.json({ url });
+    }
     if (topic === "question" && !question)
       throw new Error("Type a question first.");
     const facts = JSON.stringify(

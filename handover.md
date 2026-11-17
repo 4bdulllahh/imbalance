@@ -51,6 +51,7 @@ npm run dev        # http://localhost:3000 (bound to localhost only)
 | `src/lib/special-float.ts`   | `floatFlags`: 0.00x, best of a wear, lowest/highest possible                                               |
 | `src/lib/tracker.ts`         | Holdings (buy, sell, trade-up), settings (hold days, sell market), portfolio, backup/restore               |
 | `src/lib/timeline.ts`        | `daysToSell`, `contractTimeline`, `nextSteps` (sell, hold, wait, come back on)                             |
+| `src/lib/filters.ts`         | Plain-English search: filters schema, AI prompt, URL build and read back                                   |
 | `src/lib/ai.ts`              | User-key AI: picks provider and model from the live model list, `SYSTEM_PROMPT`, `askAi`                   |
 | `src/app/api/*`              | status, sync/*, skins, keys, listings, currency, tradeups, deals, steam-price, history, tracker, names, ai |
 | `src/components/`            | Header, KeysModal, Money, Dashboard, Catalog, TradeUps, Deals, PriceHistory, Tracker, AskAi, FloatBadges   |
@@ -116,18 +117,19 @@ POSTs from curl need `-H "Origin: http://localhost:3000"`.
 | M13 | Tracker and portfolio                                                          | M    | ✅ done |
 | M14 | Timeline, cooldowns, "come back on", next steps                                | M    | ✅ done |
 | M15 | AI advisor (Gemini / OpenRouter / Groq, user keys)                             | M    | ✅ done |
-| M16 | Ask box: plain English to filters                                              | S    | partial |
+| M16 | Ask box: plain English to filters                                              | S    | ✅ done |
 | M17 | Design pass: taste-skill, then impeccable                                      | M    | ✅ done |
 | M18 | Ready for friends: full README, fresh-clone test                               | S    | ✅ done |
 
 ## Current state
 
-- **Last done:** M17 (logo, warm brass theme) and M18 (full README, fresh-clone test: clean
-  clone, `npm ci`, no keys, catalog and price sync, scans and every page work). 82 tests pass.
-  All planned milestones are done except the second half of M16.
-- **Next:** pick from `docs/roadmap.md`. Smallest: ask box sets page filters from plain
-  English (pages must read filters from the URL first). taste-skill and impeccable were not
-  installed, so M17 was done by hand; run them later if wanted.
+- **Last done:** all milestones M1 to M18. 86 tests pass. M16 finished: the Dashboard
+  "Find" box sends plain English to the AI with `FILTERS_PROMPT`, `parseFilters` validates
+  the JSON with zod, and the page opens with filters in the URL (`/tradeups?tier=...&max=20`).
+  Trade-ups and Deals read them with `useSearchParams` inside `<Suspense>`. Amounts stay in the
+  shown currency; the user clicks Scan, so exchange rates are loaded before converting.
+- **Next:** pick from `docs/roadmap.md`. taste-skill and impeccable were not installed, so
+  M17 was done by hand; run them later if wanted.
 - **Logo:** `src/app/icon.svg` (favicon) and `public/logo.svg` (header, README) are the same
   file. Edit both.
 - **AI:** provider order Gemini, Groq, OpenRouter (first saved key wins). The model comes

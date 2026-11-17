@@ -4,10 +4,12 @@ import Image from "next/image";
 import { useMemo, useState } from "react";
 import type { FoundContract } from "@/lib/finder";
 import type { Outcome } from "@/lib/tradeup";
-import { TIERS, type Tier } from "@/lib/tradeup";
-import { MARKETPLACES, type MarketplaceId } from "@/lib/fees";
+import { isTier, TIERS, type Tier } from "@/lib/tradeup";
+import { isMarketplaceId, MARKETPLACES, type MarketplaceId } from "@/lib/fees";
 import { riskNotes, THIN_MARKET } from "@/lib/risk";
 import { useMoney } from "./Money";
+import { useSearchParams } from "next/navigation";
+import { urlFlag, urlNumber } from "@/lib/filters";
 import { AskAi } from "./AskAi";
 import type { ContractTimeline } from "@/lib/timeline";
 import { FloatBadges } from "./FloatBadges";
@@ -45,12 +47,24 @@ const contractRisks = (c: ApiContract) =>
 
 export function TradeUps() {
   const { money, rates, currency } = useMoney();
-  const [tier, setTier] = useState<Tier>("Restricted");
-  const [stattrak, setStattrak] = useState(false);
-  const [market, setMarket] = useState<MarketplaceId>("skinport");
-  const [budget, setBudget] = useState("");
+  // Filters can arrive in the URL from the Dashboard's plain-English search.
+  const params = useSearchParams();
+  const [tier, setTier] = useState<Tier>(() => {
+    const t = params.get("tier");
+    return t && isTier(t) ? t : "Restricted";
+  });
+  const [stattrak, setStattrak] = useState(() =>
+    urlFlag(params, "stattrak", false),
+  );
+  const [market, setMarket] = useState<MarketplaceId>(() => {
+    const m = params.get("market");
+    return m && isMarketplaceId(m) ? m : "skinport";
+  });
+  const [budget, setBudget] = useState(() => urlNumber(params, "max", ""));
   const [sort, setSort] = useState<SortKey>("profit");
-  const [hideRisky, setHideRisky] = useState(true);
+  const [hideRisky, setHideRisky] = useState(() =>
+    urlFlag(params, "hideRisky", true),
+  );
   const [state, setState] = useState<{
     loading: boolean;
     error?: string;
@@ -105,6 +119,13 @@ export function TradeUps() {
           lower floats only make it better.
         </p>
       </div>
+
+      {params.size > 0 && !state.contracts && (
+        <p role="status" className="panel border-accent p-3 text-sm">
+          Filters set from your search. Check them, then click{" "}
+          <strong>Scan</strong>.
+        </p>
+      )}
 
       <fieldset className="flex flex-wrap gap-2">
         <legend className="mb-1 text-sm text-muted">Rarity to put in</legend>

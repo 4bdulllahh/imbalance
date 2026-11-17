@@ -136,7 +136,11 @@ export const cleanReply = (text: string) =>
 
 export type AiAnswer = { text: string; provider: string; model: string };
 
-export async function askAi(prompt: string, file?: string): Promise<AiAnswer> {
+export async function askAi(
+  prompt: string,
+  system = SYSTEM_PROMPT,
+  file?: string,
+): Promise<AiAnswer> {
   const picked = pickProvider(file);
   if (!picked)
     throw new Error(
@@ -153,7 +157,7 @@ export async function askAi(prompt: string, file?: string): Promise<AiAnswer> {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-goog-api-key": key },
         body: JSON.stringify({
-          systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+          systemInstruction: { parts: [{ text: system }] },
           contents: [{ role: "user", parts: [{ text: prompt }] }],
           generationConfig: { temperature: 0.3, maxOutputTokens: 4000 },
         }),
@@ -178,7 +182,7 @@ export async function askAi(prompt: string, file?: string): Promise<AiAnswer> {
           temperature: 0.3,
           max_tokens: 800,
           messages: [
-            { role: "system", content: SYSTEM_PROMPT },
+            { role: "system", content: system },
             { role: "user", content: prompt },
           ],
         }),
