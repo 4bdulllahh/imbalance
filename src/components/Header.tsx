@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { KeysModal } from "./KeysModal";
+import { CurrencyPicker } from "./Money";
 
 const LINKS = [
   { href: "/", label: "Dashboard" },
@@ -41,6 +42,7 @@ export function Header() {
           ))}
         </nav>
         <div className="ml-auto flex gap-2">
+          <CurrencyPicker />
           <button
             className="btn"
             onClick={toggleTheme}

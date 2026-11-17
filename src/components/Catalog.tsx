@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import type { SkinSummary, WearPrice } from "@/lib/queries";
 import type { Listing } from "@/lib/prices/csfloat";
-import { formatMoney } from "@/lib/format";
+import { useMoney } from "./Money";
 
 const RARITIES = [
   "Consumer Grade",
@@ -23,6 +23,7 @@ type SearchResult = {
 };
 
 export function Catalog() {
+  const { money } = useMoney();
   const [q, setQ] = useState("");
   const [rarity, setRarity] = useState("");
   const [page, setPage] = useState(1);
@@ -126,7 +127,7 @@ export function Catalog() {
               </span>
               <span className="mt-auto pt-1 text-sm">
                 {s.fromCents != null ? (
-                  `from ${formatMoney(s.fromCents)}`
+                  `from ${money(s.fromCents)}`
                 ) : (
                   <span className="text-muted">no price</span>
                 )}
@@ -168,6 +169,7 @@ export function Catalog() {
 type Detail = { skin: SkinSummary; prices: WearPrice[] };
 
 function SkinDetail({ id, onClose }: { id: string; onClose: () => void }) {
+  const { money } = useMoney();
   const [detail, setDetail] = useState<Detail | null>(null);
   const [listingsFor, setListingsFor] = useState<string | null>(null);
 
@@ -248,8 +250,8 @@ function SkinDetail({ id, onClose }: { id: string; onClose: () => void }) {
                             : ""}
                         {p.wear ?? "Any"}
                       </td>
-                      <td>{formatMoney(p.minCents)}</td>
-                      <td>{formatMoney(p.median7d)}</td>
+                      <td>{money(p.minCents)}</td>
+                      <td>{money(p.median7d)}</td>
                       <td>{p.volume7d}</td>
                       <td className="text-right">
                         <button
@@ -273,6 +275,7 @@ function SkinDetail({ id, onClose }: { id: string; onClose: () => void }) {
 }
 
 function Listings({ name }: { name: string }) {
+  const { money } = useMoney();
   const [state, setState] = useState<{
     listings?: Listing[];
     error?: string;
@@ -308,7 +311,7 @@ function Listings({ name }: { name: string }) {
           <tbody>
             {state.listings.map((l) => (
               <tr key={l.id} className="border-t border-line">
-                <td className="py-1">{formatMoney(l.priceCents)}</td>
+                <td className="py-1">{money(l.priceCents)}</td>
                 <td className="font-mono">{l.float?.toFixed(6) ?? "-"}</td>
                 <td>{l.paintSeed ?? "-"}</td>
                 <td className="text-right">

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Header } from "@/components/Header";
+import { MoneyProvider } from "@/components/Money";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -37,10 +38,12 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body className="flex min-h-full flex-col font-sans">
-        <Header />
-        <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6">
-          {children}
-        </main>
+        <MoneyProvider>
+          <Header />
+          <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6">
+            {children}
+          </main>
+        </MoneyProvider>
       </body>
     </html>
   );

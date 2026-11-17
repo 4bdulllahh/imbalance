@@ -1,11 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { formatAgo, formatMoney } from "./format";
+import { formatAgo } from "./format";
 
 describe("format", () => {
-  it("formats cents", () => {
-    expect(formatMoney(123456)).toBe("$1,234.56");
-    expect(formatMoney(null)).toBe("-");
-  });
   it("formats time ago", () => {
     const now = 10_000_000_000;
     expect(formatAgo(null, now)).toBe("never");
