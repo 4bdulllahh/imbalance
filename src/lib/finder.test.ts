@@ -5,6 +5,7 @@ import { openDb } from "./db";
 import { saveCatalog } from "./catalog";
 import { saveSkinport } from "./prices/skinport";
 import { loadTierData, sellPrice } from "./tradeup-data";
+import { addHolding } from "./tracker";
 import type { OutcomeSkin } from "./tradeup";
 
 const noFee = { ...MARKETPLACES.csfloat, net: (p: number) => p };
@@ -73,7 +74,7 @@ describe("findContracts", () => {
     expect(best.result.profitCents).toBeGreaterThan(0);
   });
 
-  it("never needs more of a skin than is listed, unless the user owns it", () => {
+  it("never needs more of a skin than is listed or owned", () => {
     const scarce = { ...opt("GOLD", 300), quantity: 3 };
     const found = findContracts([scarce, opt("JUNK", 50)], outcomes, price, {
       tier: "Restricted",
@@ -82,11 +83,18 @@ describe("findContracts", () => {
     expect(
       found.every((f) => f.inputs.every((i) => i.count <= i.option.quantity)),
     ).toBe(true);
-    const owned = findContracts([{ ...scarce, owned: true }], outcomes, price, {
-      tier: "Restricted",
-      market: noFee,
-    });
-    expect(owned[0].inputs[0].count).toBe(10);
+    const owned = findContracts(
+      [{ ...scarce, owned: true }, opt("JUNK", 50)],
+      outcomes,
+      price,
+      { tier: "Restricted", market: noFee },
+    );
+    expect(
+      owned.some((f) => f.inputs.some((i) => i.option.owned && i.count === 3)),
+    ).toBe(true);
+    expect(
+      owned.every((f) => f.inputs.every((i) => i.count <= i.option.quantity)),
+    ).toBe(true);
   });
 
   it("skips options whose collection can't trade up", () => {
@@ -155,6 +163,22 @@ describe("loadTierData", () => {
       wear: "Field-Tested",
     });
     expect(d.options[0].float).toBeCloseTo(0.38 - 1e-6);
+    addHolding(db, {
+      marketHashName: "StatTrak™ P250 | Input (Field-Tested)",
+      costCents: 90,
+      boughtAt: 1,
+      float: 0.16,
+    });
+    addHolding(db, {
+      marketHashName: "StatTrak™ P250 | Input (Field-Tested)",
+      costCents: 110,
+      boughtAt: 1,
+      float: 0.31,
+    });
+    const owned = loadTierData(db, "Restricted", "stattrak", true).options.find(
+      (o) => o.owned,
+    )!;
+    expect(owned).toMatchObject({ quantity: 2, float: 0.31, costCents: 100 });
     const outSkin = d.outcomes.get("C")![0];
     expect(d.price(outSkin, "Field-Tested")).toBe(3000);
   });

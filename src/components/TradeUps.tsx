@@ -8,6 +8,7 @@ import { TIERS, type Tier } from "@/lib/tradeup";
 import { MARKETPLACES, type MarketplaceId } from "@/lib/fees";
 import { riskNotes, THIN_MARKET } from "@/lib/risk";
 import { useMoney } from "./Money";
+import type { ContractTimeline } from "@/lib/timeline";
 import { FloatBadges } from "./FloatBadges";
 
 const TIER_COLORS: Record<Tier, string> = {
@@ -29,6 +30,7 @@ const TIER_SHORT: Record<Tier, string> = {
 
 type ApiOutcome = Outcome & { volume30d: number };
 type ApiContract = Omit<FoundContract, "result"> & {
+  timeline: ContractTimeline;
   result: Omit<FoundContract["result"], "outcomes"> & {
     outcomes: ApiOutcome[];
   };
@@ -203,6 +205,12 @@ export function TradeUps() {
                 <th className="p-2 font-normal">Profit</th>
                 <th className="p-2 font-normal">ROI</th>
                 <th className="p-2 font-normal">Chance to profit</th>
+                <th
+                  className="p-2 font-normal"
+                  title="Trade hold plus expected time to sell"
+                >
+                  Days
+                </th>
                 <th className="p-2 font-normal">Risk</th>
               </tr>
             </thead>
@@ -235,7 +243,11 @@ export function TradeUps() {
                               />
                             )}
                             <span>
-                              {i.count}x {i.option.skinName}{" "}
+                              {i.count}x{" "}
+                              {i.option.owned && (
+                                <strong className="text-good">yours </strong>
+                              )}
+                              {i.option.skinName}{" "}
                               <span className="text-muted">
                                 ({i.option.wear})
                               </span>
@@ -253,6 +265,7 @@ export function TradeUps() {
                     </td>
                     <td className="p-2">{c.result.roiPercent.toFixed(0)}%</td>
                     <td className="p-2">{pct(c.result.oddsToProfit)}</td>
+                    <td className="p-2">{Math.ceil(c.timeline.totalDays)}</td>
                     <td className="p-2">
                       {risks.length ? (
                         <span className="text-bad" title={risks.join(". ")}>
@@ -311,6 +324,12 @@ function ContractDetail({
             profit {money(c.result.profitCents)}
           </span>
           , chance to profit {pct(c.result.oddsToProfit)}.
+        </p>
+        <p className="mt-1 text-sm">
+          Takes about <strong>{Math.ceil(c.timeline.totalDays)} days</strong>: a{" "}
+          {c.timeline.holdDays}-day trade hold before you can sell what you get
+          (change it on the Tracker page), then about{" "}
+          {Math.ceil(c.timeline.sellDays)} days to sell it at the usual price.
         </p>
         {risks.length > 0 && (
           <ul className="mt-2 list-disc pl-5 text-sm text-bad">

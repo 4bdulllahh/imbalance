@@ -10,6 +10,7 @@ const LINKS = [
   { href: "/tradeups", label: "Trade-ups" },
   { href: "/deals", label: "Deals" },
   { href: "/catalog", label: "Skins" },
+  { href: "/tracker", label: "Tracker" },
 ];
 
 function toggleTheme() {

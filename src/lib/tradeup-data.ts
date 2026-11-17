@@ -2,6 +2,7 @@ import type { DatabaseSync } from "node:sqlite";
 import type { InputOption } from "./finder";
 import { nextTier, type OutcomeSkin, type PriceFn, type Tier } from "./tradeup";
 import { marketHashName, WEARS, type WearName } from "./wear";
+import { listHoldings } from "./tracker";
 
 export type Variant = "normal" | "stattrak";
 
@@ -55,7 +56,12 @@ type SkinRow = {
 };
 
 /** Everything the finder needs for one tier: input options, outcome pools and a price lookup. */
-export function loadTierData(db: DatabaseSync, tier: Tier, variant: Variant) {
+export function loadTierData(
+  db: DatabaseSync,
+  tier: Tier,
+  variant: Variant,
+  includeOwned = false,
+) {
   const prices = loadPrices(db);
   const st = variant === "stattrak" ? " AND s.stattrak = 1" : "";
   const next = nextTier(tier);
@@ -164,8 +170,11 @@ export function loadTierData(db: DatabaseSync, tier: Tier, variant: Variant) {
     }
   }
 
+  const owned = includeOwned
+    ? ownedOptions(db, inputRows, variant, prices)
+    : [];
   return {
-    options: cheapestPerCollectionWear(options),
+    options: [...cheapestPerCollectionWear(options), ...owned],
     outcomes,
     price,
     volume30d,
@@ -181,4 +190,72 @@ function cheapestPerCollectionWear(options: InputOption[]): InputOption[] {
     if (!cur || o.costCents < cur.costCents) best.set(k, o);
   }
   return [...best.values()];
+}
+
+/**
+ * Skins the user holds (tracker) as finder options, grouped by market name. They count at
+ * today's market price, since using them means not selling them.
+ */
+function ownedOptions(
+  db: DatabaseSync,
+  skins: SkinRow[],
+  variant: Variant,
+  prices: Map<string, PriceRow>,
+): InputOption[] {
+  const groups = new Map<string, number[]>();
+  const costs = new Map<string, number[]>();
+  for (const h of listHoldings(db)) {
+    if (h.status !== "holding") continue;
+    groups.set(h.marketHashName, [
+      ...(groups.get(h.marketHashName) ?? []),
+      h.float ?? -1,
+    ]);
+    costs.set(h.marketHashName, [
+      ...(costs.get(h.marketHashName) ?? []),
+      h.costCents,
+    ]);
+  }
+  const options: InputOption[] = [];
+  for (const r of skins) {
+    if (r.min_float == null || r.max_float == null) continue;
+    for (const wear of JSON.parse(r.wears) as WearName[]) {
+      const name = marketHashName(r.name, wear, variant);
+      const floats = groups.get(name);
+      if (!floats) continue;
+      const w = WEARS.findIndex((x) => x.name === wear);
+      const worstOfWear = Math.max(
+        r.min_float,
+        Math.min(r.max_float, WEARS[w].max - 1e-6),
+      );
+      // Unknown floats (-1) count as the worst the wear allows.
+      const worst = Math.max(...floats.map((f) => (f < 0 ? worstOfWear : f)));
+      const paid = costs.get(name)!;
+      options.push({
+        skinId: r.id,
+        skinName: r.name,
+        image: r.image,
+        collectionId: r.collection_id,
+        wear,
+        marketHashName: name,
+        float: Math.min(Math.max(worst, r.min_float), r.max_float),
+        minFloat: r.min_float,
+        maxFloat: r.max_float,
+        costCents:
+          prices.get(`${name}|`)?.min_cents ??
+          Math.round(paid.reduce((a, b) => a + b, 0) / paid.length),
+        quantity: floats.length,
+        owned: true,
+      });
+    }
+  }
+  return options;
+}
+
+/** Current sell price and 30-day sales for any market item, for the tracker. */
+export function priceLookup(db: DatabaseSync) {
+  const prices = loadPrices(db);
+  return (marketHashName: string, version = "") => {
+    const r = prices.get(`${marketHashName}|${version}`);
+    return { sellCents: sellPrice(r), volume30d: r?.volume_30d ?? 0 };
+  };
 }

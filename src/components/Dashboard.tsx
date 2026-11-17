@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import type { Status } from "@/lib/queries";
+import type { NextStep } from "@/lib/timeline";
+import { NextSteps } from "./Tracker";
 import { formatAgo } from "@/lib/format";
 
 type FullStatus = Status & {
@@ -70,10 +72,12 @@ export function Dashboard() {
       <div>
         <h1 className="text-2xl font-bold">Dashboard</h1>
         <p className="text-sm text-muted">
-          Update the skin list and prices, then scan for trade-ups. Deals and
-          charts comes next.
+          Update the skin list and prices, then look for trade-ups and deals.
+          Log what you buy on the Tracker page.
         </p>
       </div>
+
+      <TrackerSteps />
 
       {empty && (
         <div className="panel border-accent p-4 text-sm">
@@ -141,4 +145,24 @@ export function Dashboard() {
       )}
     </div>
   );
+}
+
+/** Next steps from the tracker, if the user has logged anything. */
+function TrackerSteps() {
+  const [data, setData] = useState<{
+    steps: NextStep[];
+    comeBackAt: number | null;
+  } | null>(null);
+  useEffect(() => {
+    fetch("/api/tracker")
+      .then(
+        (r) =>
+          r.json() as Promise<{ steps: NextStep[]; comeBackAt: number | null }>,
+      )
+      .then(setData)
+      .catch(() => setData(null));
+  }, []);
+  return data ? (
+    <NextSteps steps={data.steps} comeBackAt={data.comeBackAt} />
+  ) : null;
 }

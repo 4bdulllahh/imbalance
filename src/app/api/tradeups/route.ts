@@ -1,3 +1,5 @@
+import { getSettings } from "@/lib/tracker";
+import { contractTimeline } from "@/lib/timeline";
 import { getDb } from "@/lib/db";
 import { isMarketplaceId, MARKETPLACES } from "@/lib/fees";
 import { findContracts } from "@/lib/finder";
@@ -21,7 +23,9 @@ export async function GET(req: Request) {
     return Response.json({ error: "Pick where you'll sell." }, { status: 400 });
 
   const hideRisky = p.get("hideRisky") === "1";
-  const data = loadTierData(getDb(), tier, variant);
+  const db = getDb();
+  const { holdDays } = getSettings(db);
+  const data = loadTierData(db, tier, variant, p.get("owned") !== "0");
   const contracts = findContracts(data.options, data.outcomes, data.price, {
     tier,
     market: MARKETPLACES[market],
@@ -34,7 +38,8 @@ export async function GET(req: Request) {
         volume30d: data.volume30d(o.skin, o.wear),
       }));
       const risky = riskNotes(outcomes, c.result.evCents).length > 0;
-      return { ...c, risky, result: { ...c.result, outcomes } };
+      const timeline = contractTimeline(holdDays, outcomes);
+      return { ...c, risky, timeline, result: { ...c.result, outcomes } };
     })
     .filter((c) => !hideRisky || !c.risky)
     .slice(0, 50);

@@ -12,7 +12,9 @@ const page = await browser.newPage({ viewport: { width, height: 900 } });
 await page.addInitScript(() =>
   localStorage.setItem("imbalance-keys-dismissed", "1"),
 );
-await page.goto(`http://localhost:3000${path}`, { waitUntil: "networkidle" });
+// networkidle never fires while the dev server keeps a live connection open.
+await page.goto(`http://localhost:3000${path}`, { waitUntil: "load" });
+await page.waitForTimeout(3000);
 if (flags.includes("--scan")) {
   await page.getByRole("button", { name: /^(Scan|Find deals)$/ }).click();
   await page.waitForSelector("table tbody tr", { timeout: 60_000 });

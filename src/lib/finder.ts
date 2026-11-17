@@ -24,7 +24,10 @@ export type InputOption = {
   maxFloat: number;
   costCents: number;
   quantity: number;
-  /** True when it's a skin the user already owns (from the tracker). */
+  /**
+   * True for skins the user already owns (from the tracker). Their cost is today's market
+   * price: using them gives up selling them. Float is the worst one they own.
+   */
   owned?: boolean;
 };
 
@@ -58,9 +61,14 @@ export function findContracts(
   const usable = options.filter(
     (o) => outcomesByCollection.get(o.collectionId)?.length,
   );
-  const fillers = [...usable]
-    .sort((a, b) => a.costCents - b.costCents)
-    .slice(0, opts.fillerPool ?? 30);
+  // Cheapest market options, plus everything the user owns (always worth trying).
+  const fillers = [
+    ...[...usable]
+      .filter((o) => !o.owned)
+      .sort((a, b) => a.costCents - b.costCents)
+      .slice(0, opts.fillerPool ?? 30),
+    ...usable.filter((o) => o.owned),
+  ];
   const found = new Map<string, FoundContract>();
 
   const tryMix = (
@@ -75,13 +83,15 @@ export function findContracts(
             { option: filler, count: n - k },
           ]
         : [{ option: target, count: n }];
-    // Can't buy 10 of something with only 3 listed (owned skins are already in hand).
-    if (parts.some((p) => !p.option.owned && p.count > p.option.quantity))
-      return;
+    // Can't use 10 of something with only 3 listed (or 3 owned).
+    if (parts.some((p) => p.count > p.option.quantity)) return;
     const cost = parts.reduce((s, p) => s + p.option.costCents * p.count, 0);
     if (opts.budgetCents != null && cost > opts.budgetCents) return;
     const key = parts
-      .map((p) => `${p.count}x${p.option.marketHashName}`)
+      .map(
+        (p) =>
+          `${p.count}x${p.option.owned ? "owned:" : ""}${p.option.marketHashName}`,
+      )
       .sort()
       .join("+");
     if (found.has(key)) return;

@@ -1,4 +1,5 @@
-export type MarketplaceId = "skinport" | "csfloat" | "steam";
+export const MARKETPLACE_IDS = ["skinport", "csfloat", "steam"] as const;
+export type MarketplaceId = (typeof MARKETPLACE_IDS)[number];
 
 export type Marketplace = {
   id: MarketplaceId;

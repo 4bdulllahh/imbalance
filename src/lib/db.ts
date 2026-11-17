@@ -102,6 +102,27 @@ const MIGRATIONS: string[] = [
   );
   CREATE INDEX listings_item ON listings (market_hash_name, price_cents);
   `,
+  // v2: tracker. Each row is one item the user owns or owned.
+  `
+  CREATE TABLE holdings (
+    id INTEGER PRIMARY KEY,
+    market_hash_name TEXT NOT NULL,
+    version TEXT NOT NULL DEFAULT '',
+    float_value REAL,
+    cost_cents INTEGER NOT NULL,
+    bought_at INTEGER NOT NULL,
+    tradable_at INTEGER NOT NULL,
+    source TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'holding' CHECK (status IN ('holding', 'used', 'sold')),
+    used_in INTEGER,
+    sold_cents INTEGER,
+    sold_net_cents INTEGER,
+    sold_on TEXT,
+    sold_at INTEGER,
+    note TEXT
+  );
+  CREATE INDEX holdings_status ON holdings (status);
+  `,
 ];
 
 export const SCHEMA_VERSION = MIGRATIONS.length;
