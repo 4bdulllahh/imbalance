@@ -8,6 +8,7 @@ import { TIERS, type Tier } from "@/lib/tradeup";
 import { MARKETPLACES, type MarketplaceId } from "@/lib/fees";
 import { riskNotes, THIN_MARKET } from "@/lib/risk";
 import { useMoney } from "./Money";
+import { FloatBadges } from "./FloatBadges";
 
 const TIER_COLORS: Record<Tier, string> = {
   "Consumer Grade": "#b0c3d9",
@@ -394,7 +395,14 @@ function ContractDetail({
                     </div>
                   </td>
                   <td>{pct(o.probability)}</td>
-                  <td className="font-mono">{o.float.toFixed(4)}</td>
+                  <td className="font-mono">
+                    {o.float.toFixed(4)}
+                    <FloatBadges
+                      float={o.float}
+                      min={o.skin.minFloat}
+                      max={o.skin.maxFloat}
+                    />
+                  </td>
                   <td>{money(o.priceCents)}</td>
                   <td
                     className={

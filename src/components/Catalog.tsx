@@ -6,6 +6,7 @@ import type { SkinSummary, WearPrice } from "@/lib/queries";
 import type { Listing } from "@/lib/prices/csfloat";
 import { useMoney } from "./Money";
 import { PriceHistory } from "./PriceHistory";
+import { FloatBadges } from "./FloatBadges";
 
 const RARITIES = [
   "Consumer Grade",
@@ -280,7 +281,14 @@ function SkinDetail({ id, onClose }: { id: string; onClose: () => void }) {
                 <PriceHistory key={chartFor} name={chartFor} />
               </div>
             )}
-            {listingsFor && <Listings key={listingsFor} name={listingsFor} />}
+            {listingsFor && (
+              <Listings
+                key={listingsFor}
+                name={listingsFor}
+                minFloat={s.minFloat}
+                maxFloat={s.maxFloat}
+              />
+            )}
           </>
         )}
       </div>
@@ -288,7 +296,15 @@ function SkinDetail({ id, onClose }: { id: string; onClose: () => void }) {
   );
 }
 
-function Listings({ name }: { name: string }) {
+function Listings({
+  name,
+  minFloat,
+  maxFloat,
+}: {
+  name: string;
+  minFloat: number | null;
+  maxFloat: number | null;
+}) {
   const { money } = useMoney();
   const [state, setState] = useState<{
     listings?: Listing[];
@@ -303,6 +319,10 @@ function Listings({ name }: { name: string }) {
       .then(setState)
       .catch(() => setState({ error: "Could not load listings." }));
   }, [name]);
+
+  const cheapest = Math.min(
+    ...(state?.listings ?? []).map((l) => l.priceCents),
+  );
 
   return (
     <div className="mt-4">
@@ -325,8 +345,21 @@ function Listings({ name }: { name: string }) {
           <tbody>
             {state.listings.map((l) => (
               <tr key={l.id} className="border-t border-line">
-                <td className="py-1">{money(l.priceCents)}</td>
-                <td className="font-mono">{l.float?.toFixed(6) ?? "-"}</td>
+                <td className="py-1">
+                  {money(l.priceCents)}
+                  {l.priceCents > cheapest * 1.05 && (
+                    <span
+                      className="ml-1 text-xs text-muted"
+                      title="Extra over the cheapest listing: what this float or pattern adds"
+                    >
+                      +{Math.round((l.priceCents / cheapest - 1) * 100)}%
+                    </span>
+                  )}
+                </td>
+                <td className="font-mono">
+                  {l.float?.toFixed(6) ?? "-"}
+                  <FloatBadges float={l.float} min={minFloat} max={maxFloat} />
+                </td>
                 <td>{l.paintSeed ?? "-"}</td>
                 <td className="text-right">
                   <a
