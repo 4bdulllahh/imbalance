@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { Status } from "@/lib/queries";
 import type { NextStep } from "@/lib/timeline";
 import { NextSteps } from "./Tracker";
+import { AskAi } from "./AskAi";
 import { formatAgo } from "@/lib/format";
 
 type FullStatus = Status & {
@@ -78,6 +79,19 @@ export function Dashboard() {
       </div>
 
       <TrackerSteps />
+
+      <section className="panel space-y-2 p-4">
+        <h2 className="font-semibold">Ask the AI</h2>
+        <p className="text-sm text-muted">
+          Uses your own Gemini, Groq or OpenRouter key and sees what is in your
+          Tracker. For a trade-up or deal, open it and ask from there.
+        </p>
+        <AskAi
+          topic="question"
+          needsQuestion
+          placeholder="e.g. Which of my skins should I sell first?"
+        />
+      </section>
 
       {empty && (
         <div className="panel border-accent p-4 text-sm">

@@ -8,6 +8,7 @@ import { TIERS, type Tier } from "@/lib/tradeup";
 import { MARKETPLACES, type MarketplaceId } from "@/lib/fees";
 import { riskNotes, THIN_MARKET } from "@/lib/risk";
 import { useMoney } from "./Money";
+import { AskAi } from "./AskAi";
 import type { ContractTimeline } from "@/lib/timeline";
 import { FloatBadges } from "./FloatBadges";
 
@@ -339,6 +340,10 @@ function ContractDetail({
           </ul>
         )}
 
+        <div className="mt-4">
+          <AskAi topic="contract" data={contractForAi(c, risks)} />
+        </div>
+
         <h3 className="mt-4 mb-2 font-semibold">1. Buy these</h3>
         <ul className="space-y-2 text-sm">
           {c.inputs.map((i) => (
@@ -441,4 +446,32 @@ function ContractDetail({
       </div>
     </div>
   );
+}
+
+/** The computed facts about a contract, compact, for the AI to comment on. */
+function contractForAi(c: ApiContract, risks: string[]) {
+  return {
+    costCents: c.result.costCents,
+    expectedValueAfterFeesCents: c.result.evCents,
+    profitCents: c.result.profitCents,
+    roiPercent: Math.round(c.result.roiPercent),
+    chanceToProfit: c.result.oddsToProfit,
+    days: c.timeline,
+    warnings: risks,
+    inputs: c.inputs.map((i) => ({
+      count: i.count,
+      item: i.option.marketHashName,
+      eachCents: i.option.costCents,
+      owned: Boolean(i.option.owned),
+    })),
+    outcomes: c.result.outcomes.map((o) => ({
+      item: o.skin.name,
+      wear: o.wear,
+      float: Number(o.float.toFixed(4)),
+      probability: Number(o.probability.toFixed(3)),
+      sellCents: o.priceCents,
+      afterFeeCents: o.netCents,
+      sales30d: o.volume30d,
+    })),
+  };
 }

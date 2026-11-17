@@ -6,6 +6,7 @@ import type { Deal } from "@/lib/deals";
 import type { SteamPrice } from "@/lib/prices/steam";
 import { MARKETPLACES, steamNet, type MarketplaceId } from "@/lib/fees";
 import { useMoney } from "./Money";
+import { AskAi } from "./AskAi";
 import { PriceHistory, TrendBadge } from "./PriceHistory";
 
 export function Deals() {
@@ -17,9 +18,7 @@ export function Deals() {
   const [q, setQ] = useState("");
   const [weapons, setWeapons] = useState(true);
   const [dips, setDips] = useState(false);
-  const [chart, setChart] = useState<{ name: string; version: string } | null>(
-    null,
-  );
+  const [chart, setChart] = useState<Deal | null>(null);
   const [state, setState] = useState<{
     loading: boolean;
     error?: string;
@@ -198,12 +197,7 @@ export function Deals() {
                         <TrendBadge trend={d.trend} />
                         <button
                           className="ml-2 text-xs text-accent underline"
-                          onClick={() =>
-                            setChart({
-                              name: d.marketHashName,
-                              version: d.version,
-                            })
-                          }
+                          onClick={() => setChart(d)}
                         >
                           Chart
                         </button>
@@ -230,7 +224,7 @@ export function Deals() {
         <div
           role="dialog"
           aria-modal="true"
-          aria-label={`Price history: ${chart.name}`}
+          aria-label={`Price history: ${chart.marketHashName}`}
           className="fixed inset-0 z-10 flex justify-end bg-black/60"
           onClick={() => setChart(null)}
         >
@@ -246,10 +240,13 @@ export function Deals() {
               Close
             </button>
             <h2 className="mb-3 text-lg font-semibold">
-              {chart.name}
+              {chart.marketHashName}
               {chart.version ? ` (${chart.version})` : ""}
             </h2>
-            <PriceHistory name={chart.name} version={chart.version} />
+            <PriceHistory name={chart.marketHashName} version={chart.version} />
+            <div className="mt-4">
+              <AskAi topic="deal" data={chart} />
+            </div>
           </div>
         </div>
       )}
