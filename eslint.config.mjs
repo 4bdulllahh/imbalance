@@ -9,6 +9,8 @@ const eslintConfig = defineConfig([
   globalIgnores([
     // Default ignores of eslint-config-next:
     ".next/**",
+    // Local database and the app-window browser profile from tools/launch.mjs.
+    "data/**",
     "out/**",
     "build/**",
     "next-env.d.ts",
