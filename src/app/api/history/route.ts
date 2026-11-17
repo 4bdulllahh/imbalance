@@ -1,0 +1,39 @@
+import { getDb } from "@/lib/db";
+import { classifyTrend, snapshotSeries } from "@/lib/trend";
+
+/** Chart data for one item: our snapshots plus Skinport's sales medians and a trend signal. */
+export async function GET(req: Request) {
+  const p = new URL(req.url).searchParams;
+  const name = p.get("name")?.slice(0, 200);
+  const version = p.get("version")?.slice(0, 50) ?? "";
+  if (!name)
+    return Response.json({ error: "Pick an item first." }, { status: 400 });
+  const db = getDb();
+  const row = db
+    .prepare(
+      `SELECT p.min_cents, h.median_24h, h.median_7d, h.median_30d, h.median_90d,
+              h.volume_24h, h.volume_7d, h.volume_30d, h.volume_90d
+       FROM prices p LEFT JOIN price_history h
+         ON h.market_hash_name = p.market_hash_name AND h.source = p.source AND h.version = p.version
+       WHERE p.source = 'skinport' AND p.market_hash_name = ? AND p.version = ?`,
+    )
+    .get(name, version) as Record<string, number | null> | undefined;
+  const medians = {
+    median24h: row?.median_24h ?? null,
+    median7d: row?.median_7d ?? null,
+    median30d: row?.median_30d ?? null,
+    median90d: row?.median_90d ?? null,
+  };
+  return Response.json({
+    points: snapshotSeries(db, name, version),
+    nowCents: row?.min_cents ?? null,
+    ...medians,
+    volumes: {
+      d1: row?.volume_24h ?? 0,
+      d7: row?.volume_7d ?? 0,
+      d30: row?.volume_30d ?? 0,
+      d90: row?.volume_90d ?? 0,
+    },
+    trend: classifyTrend({ nowCents: row?.min_cents ?? null, ...medians }),
+  });
+}

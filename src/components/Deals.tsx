@@ -6,6 +6,7 @@ import type { Deal } from "@/lib/deals";
 import type { SteamPrice } from "@/lib/prices/steam";
 import { MARKETPLACES, steamNet, type MarketplaceId } from "@/lib/fees";
 import { useMoney } from "./Money";
+import { PriceHistory, TrendBadge } from "./PriceHistory";
 
 export function Deals() {
   const { money, rates, currency } = useMoney();
@@ -15,6 +16,10 @@ export function Deals() {
   const [max, setMax] = useState("");
   const [q, setQ] = useState("");
   const [weapons, setWeapons] = useState(true);
+  const [dips, setDips] = useState(false);
+  const [chart, setChart] = useState<{ name: string; version: string } | null>(
+    null,
+  );
   const [state, setState] = useState<{
     loading: boolean;
     error?: string;
@@ -32,6 +37,7 @@ export function Deals() {
         max: String(usdMax || ""),
         q,
         weapons: weapons ? "1" : "0",
+        dips: dips ? "1" : "0",
       });
       const res = await fetch(`/api/deals?${params}`);
       const json = (await res.json()) as { error?: string; deals?: Deal[] };
@@ -120,6 +126,17 @@ export function Deals() {
           />
           Weapon skins only
         </label>
+        <label
+          className="flex items-center gap-2"
+          title="Short drops against a steady long-term price, which tend to correct"
+        >
+          <input
+            type="checkbox"
+            checked={dips}
+            onChange={(e) => setDips(e.target.checked)}
+          />
+          Dips only
+        </label>
         <button
           className="btn-primary"
           disabled={state.loading}
@@ -178,14 +195,18 @@ export function Deals() {
                           {d.marketHashName}
                           {d.version ? ` (${d.version})` : ""}
                         </a>
-                        {d.falling && (
-                          <span
-                            className="ml-2 rounded bg-bad/15 px-1.5 text-xs text-bad"
-                            title="7-day median is 10%+ under the 90-day one"
-                          >
-                            falling
-                          </span>
-                        )}
+                        <TrendBadge trend={d.trend} />
+                        <button
+                          className="ml-2 text-xs text-accent underline"
+                          onClick={() =>
+                            setChart({
+                              name: d.marketHashName,
+                              version: d.version,
+                            })
+                          }
+                        >
+                          Chart
+                        </button>
                       </span>
                     </div>
                   </td>
@@ -203,6 +224,33 @@ export function Deals() {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+      {chart && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Price history: ${chart.name}`}
+          className="fixed inset-0 z-10 flex justify-end bg-black/60"
+          onClick={() => setChart(null)}
+        >
+          <div
+            className="h-full w-full max-w-lg overflow-y-auto border-l border-line bg-panel p-5"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              className="btn float-right"
+              onClick={() => setChart(null)}
+              autoFocus
+            >
+              Close
+            </button>
+            <h2 className="mb-3 text-lg font-semibold">
+              {chart.name}
+              {chart.version ? ` (${chart.version})` : ""}
+            </h2>
+            <PriceHistory name={chart.name} version={chart.version} />
+          </div>
         </div>
       )}
     </div>

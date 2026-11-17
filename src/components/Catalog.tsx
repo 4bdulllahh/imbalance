@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import type { SkinSummary, WearPrice } from "@/lib/queries";
 import type { Listing } from "@/lib/prices/csfloat";
 import { useMoney } from "./Money";
+import { PriceHistory } from "./PriceHistory";
 
 const RARITIES = [
   "Consumer Grade",
@@ -172,6 +173,7 @@ function SkinDetail({ id, onClose }: { id: string; onClose: () => void }) {
   const { money } = useMoney();
   const [detail, setDetail] = useState<Detail | null>(null);
   const [listingsFor, setListingsFor] = useState<string | null>(null);
+  const [chartFor, setChartFor] = useState<string | null>(null);
 
   useEffect(() => {
     fetch(`/api/skins/${encodeURIComponent(id)}`)
@@ -259,6 +261,12 @@ function SkinDetail({ id, onClose }: { id: string; onClose: () => void }) {
                           onClick={() => setListingsFor(p.marketHashName)}
                         >
                           Floats
+                        </button>{" "}
+                        <button
+                          className="text-accent underline"
+                          onClick={() => setChartFor(p.marketHashName)}
+                        >
+                          Chart
                         </button>
                       </td>
                     </tr>
@@ -266,6 +274,12 @@ function SkinDetail({ id, onClose }: { id: string; onClose: () => void }) {
                 </tbody>
               </table>
             </div>
+            {chartFor && (
+              <div className="mt-4">
+                <h3 className="mb-2 font-semibold">{chartFor}</h3>
+                <PriceHistory key={chartFor} name={chartFor} />
+              </div>
+            )}
             {listingsFor && <Listings key={listingsFor} name={listingsFor} />}
           </>
         )}

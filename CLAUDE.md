@@ -41,6 +41,13 @@ from training data, so read `node_modules/next/dist/docs/` before using a Next A
   cooldown in `src/lib/sync-state.ts`.
 - **The AI never does maths.** Code computes floats, odds and EV. The AI only comments on
   them (M15).
+- **Client components only import pure modules from `src/lib/`** (`format`, `fees`, `tradeup`,
+  `risk`, `trend` types and labels). Anything that imports `db.ts` pulls `node:sqlite` into the
+  browser bundle and the page fails with a Turbopack error.
+- **`node:sqlite` binds JS numbers as REAL.** Integer maths in SQL (like `taken_at / day`)
+  needs `CAST(... AS INTEGER)`.
+- **Trade-up odds use the pool model,** not the per-collection split in the original brief.
+  See `outcomeProbabilities` in `src/lib/tradeup.ts`.
 - No em dashes, en dashes or the ellipsis character anywhere, including UI text.
 
 ## Everyday commands

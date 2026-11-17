@@ -65,7 +65,7 @@ describe("findDeals", () => {
       usualCents: 2000,
       netResaleCents: 1840,
       flipProfitCents: 340,
-      falling: true,
+      trend: "falling",
     });
     expect(deals[0].discount).toBeCloseTo(0.25);
   });

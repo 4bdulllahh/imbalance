@@ -1,5 +1,6 @@
 import type { DatabaseSync } from "node:sqlite";
 import type { Marketplace } from "./fees";
+import { classifyTrend, type TrendSignal } from "./trend";
 
 export type Deal = {
   marketHashName: string;
@@ -12,8 +13,7 @@ export type Deal = {
   volume30d: number;
   netResaleCents: number;
   flipProfitCents: number;
-  /** 7-day median well under the 90-day one: the price is sliding, not just one cheap listing. */
-  falling: boolean;
+  trend: TrendSignal;
 };
 
 export type DealOptions = {
@@ -23,6 +23,8 @@ export type DealOptions = {
   maxBuyCents?: number;
   q?: string;
   weaponsOnly?: boolean;
+  /** Only short drops against a steady long-term price, the ones that tend to correct. */
+  dipsOnly?: boolean;
   limit?: number;
 };
 
@@ -31,6 +33,7 @@ type Row = {
   version: string;
   min_cents: number;
   quantity: number;
+  median_24h: number | null;
   median_7d: number | null;
   median_30d: number;
   volume_30d: number;
@@ -59,7 +62,7 @@ export function findDeals(db: DatabaseSync, opts: DealOptions): Deal[] {
   const rows = db
     .prepare(
       `SELECT p.market_hash_name, p.version, p.min_cents, p.quantity,
-              h.median_7d, h.median_30d, h.volume_30d, h.median_90d
+              h.median_24h, h.median_7d, h.median_30d, h.volume_30d, h.median_90d
        FROM prices p JOIN price_history h
          ON h.market_hash_name = p.market_hash_name AND h.source = p.source AND h.version = p.version
        WHERE p.source = 'skinport' AND p.min_cents > 0 AND p.quantity > 0
@@ -101,13 +104,20 @@ export function findDeals(db: DatabaseSync, opts: DealOptions): Deal[] {
         volume30d: r.volume_30d,
         netResaleCents,
         flipProfitCents: netResaleCents - r.min_cents,
-        falling:
-          r.median_7d != null &&
-          r.median_90d != null &&
-          r.median_7d < r.median_90d * 0.9,
+        trend: classifyTrend({
+          nowCents: r.min_cents,
+          median24h: r.median_24h,
+          median7d: r.median_7d,
+          median30d: r.median_30d,
+          median90d: r.median_90d,
+        }),
       };
     })
-    .filter((d) => d.flipProfitCents > 0)
+    .filter(
+      (d) =>
+        d.flipProfitCents > 0 &&
+        (!opts.dipsOnly || d.trend === "dip" || d.trend === "rebounding"),
+    )
     .sort((a, b) => b.flipProfitCents - a.flipProfitCents)
     .slice(0, opts.limit ?? 100);
 }

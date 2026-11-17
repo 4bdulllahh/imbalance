@@ -3,6 +3,7 @@ import type { DatabaseSync } from "node:sqlite";
 import { getMeta, setMeta, transaction } from "../db";
 import { fetchJson } from "../http";
 import { toCents } from "../wear";
+import { pruneSnapshots } from "../trend";
 
 // Public, no key. Skinport caches these for 5 minutes and allows about 8 requests per 5 minutes.
 const BASE = "https://api.skinport.com/v1";
@@ -10,7 +11,6 @@ const QUERY = "app_id=730&currency=USD";
 const HEADERS = { "Accept-Encoding": "br" }; // required by Skinport
 export const SOURCE = "skinport";
 export const SYNC_COOLDOWN_MS = 5 * 60_000;
-// shortcut: snapshots grow forever (~15k rows each), prune old ones when charts land in M11.
 const SNAPSHOT_EVERY_MS = 6 * 60 * 60_000;
 // Stickers, charms and the like are never trade-up inputs, so they get no history.
 const NO_SNAPSHOT =
@@ -119,7 +119,10 @@ export function saveSkinport(
     }
 
     setMeta(db, "skinport_synced_at", String(now));
-    if (takeSnapshot) setMeta(db, "skinport_snapshot_at", String(now));
+    if (takeSnapshot) {
+      setMeta(db, "skinport_snapshot_at", String(now));
+      pruneSnapshots(db, now);
+    }
   });
 
   return {

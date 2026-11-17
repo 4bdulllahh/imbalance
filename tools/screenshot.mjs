@@ -1,5 +1,5 @@
 // Screenshots pages of the running app with the installed Edge.
-// Usage: node tools/screenshot.mjs <outDir> [page, e.g. tradeups] [--scan] [--click-first-row] [--width=390]
+// Usage: node tools/screenshot.mjs <outDir> [page, e.g. tradeups] [--scan] [--click=<button text>] [--click-first-row] [--width=390]
 import { chromium } from "playwright-core";
 
 const [outDir, rawPath = "", ...flags] = process.argv.slice(2);
@@ -17,12 +17,17 @@ if (flags.includes("--scan")) {
   await page.getByRole("button", { name: /^(Scan|Find deals)$/ }).click();
   await page.waitForSelector("table tbody tr", { timeout: 60_000 });
 }
+const clickText = flags.find((f) => f.startsWith("--click="))?.slice(8);
+if (clickText) {
+  await page.getByRole("button", { name: clickText }).first().click();
+  await page.waitForTimeout(2000);
+}
 if (flags.includes("--click-first-row")) {
   await page.locator("table tbody tr").first().click();
   await page.waitForSelector('[role="dialog"]');
   await page.waitForTimeout(1500);
 }
-const name = `${outDir}/shot-${path.replace(/\W+/g, "") || "home"}-${width}${flags.includes("--click-first-row") ? "-detail" : ""}.png`;
+const name = `${outDir}/shot-${path.replace(/\W+/g, "") || "home"}-${width}${flags.includes("--click-first-row") || clickText ? "-detail" : ""}.png`;
 await page.screenshot({ path: name });
 console.log(name);
 await browser.close();

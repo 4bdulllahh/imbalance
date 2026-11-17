@@ -28,19 +28,29 @@ npm run dev        # http://localhost:3000 (bound to localhost only)
 
 ## How the code is organised
 
-| Folder / file                | What's in it                                                                           |
-| ---------------------------- | -------------------------------------------------------------------------------------- |
-| `src/lib/db.ts`              | `node:sqlite` connection, `MIGRATIONS` list, `PRAGMA user_version`, meta helpers       |
-| `src/lib/catalog.ts`         | ByMykel skins, collections, crates (zod) into `skins`, `skin_collections`, `rare_pool` |
-| `src/lib/prices/skinport.ts` | Skinport items + sales history, snapshots every 6 h (weapon skins only)                |
-| `src/lib/prices/csfloat.ts`  | CSFloat listings with floats, cached 10 min in `listings`                              |
-| `src/lib/keys.ts`            | Key guide data (`KEY_DEFS`), read/write `.env.local`                                   |
-| `src/lib/queries.ts`         | Status, catalog search, skin detail with prices per wear                               |
-| `src/lib/wear.ts`            | Wear tiers, `wearForFloat`, `marketHashName`, `toCents`                                |
-| `src/lib/http.ts`            | `fetchJson` with timeout, zod check and plain-English errors                           |
-| `src/lib/same-origin.ts`     | Blocks POSTs from other websites                                                       |
-| `src/app/api/*`              | Route handlers: status, sync/catalog, sync/prices, skins, skins/[id], keys, listings   |
-| `src/components/`            | Client UI: Header, KeysModal, Dashboard, Catalog                                       |
+| Folder / file                | What's in it                                                                                   |
+| ---------------------------- | ---------------------------------------------------------------------------------------------- |
+| `src/lib/db.ts`              | `node:sqlite` connection, `MIGRATIONS` list, `PRAGMA user_version`, meta helpers               |
+| `src/lib/catalog.ts`         | ByMykel skins, collections, crates (zod) into `skins`, `skin_collections`, `rare_pool`         |
+| `src/lib/prices/skinport.ts` | Skinport items + sales history, snapshots every 6 h (weapon skins only)                        |
+| `src/lib/prices/csfloat.ts`  | CSFloat listings with floats, cached 10 min in `listings`                                      |
+| `src/lib/keys.ts`            | Key guide data (`KEY_DEFS`), read/write `.env.local`                                           |
+| `src/lib/queries.ts`         | Status, catalog search, skin detail with prices per wear                                       |
+| `src/lib/wear.ts`            | Wear tiers, `wearForFloat`, `marketHashName`, `toCents`                                        |
+| `src/lib/http.ts`            | `fetchJson` with timeout, zod check and plain-English errors                                   |
+| `src/lib/same-origin.ts`     | Blocks POSTs from other websites                                                               |
+| `src/lib/currency.ts`        | Daily FX rates (open.er-api.com) cached in `meta`. `formatIn` lives in `format.ts`             |
+| `src/lib/fees.ts`            | Marketplaces and net-after-fee (Steam per-fee rounding, Skinport 8%, CSFloat 2%)               |
+| `src/lib/tradeup.ts`         | Pure maths: pool odds, normalized floats, wear, EV, ROI, odds to profit                        |
+| `src/lib/tradeup-data.ts`    | Loads input options, outcome pools, `sellPrice` (7/30/90-day median) and 30d volume            |
+| `src/lib/finder.ts`          | Target + filler mixes (1..N-1), listing quantity check, budget                                 |
+| `src/lib/risk.ts`            | Risky = missing prices, or >25% of EV from skins sold under 3 times in 30 days                 |
+| `src/lib/deals.ts`           | Items under their 30-day median that flip for profit, with trend signal                        |
+| `src/lib/trend.ts`           | `classifyTrend` (dip, rebounding, falling, rising), snapshot series and pruning                |
+| `src/lib/prices/steam.ts`    | Steam priceoverview per item on demand, cached 10 min as source `steam`                        |
+| `src/app/api/*`              | status, sync/*, skins, keys, listings, currency, tradeups, deals, steam-price, history         |
+| `src/components/`            | Header, KeysModal, Money (currency context), Dashboard, Catalog, TradeUps, Deals, PriceHistory |
+| `tools/screenshot.mjs`       | playwright-core + installed Edge screenshots, see Checking your work                           |
 
 Pages are client components that call the API routes. Logic stays in `src/lib/` with tests
 next to it.
@@ -50,7 +60,8 @@ next to it.
 - `data/imbalance.db` (gitignored). Schema v1. New tables or columns: add an entry to
   `MIGRATIONS` in `src/lib/db.ts`, never edit an old one.
 - Money is integer USD cents. Skinport `version` (Doppler phase) is part of price keys.
-- `price_snapshots` grows ~15k rows every 6 h. Pruning is due in M11.
+- `price_snapshots`: ~15k rows every 6 h, thinned on each snapshot to one a day after 7 days
+  and one a week after 90 days.
 - Keys live in `.env.local` (then `.env`), read fresh on each call. `process.env` is ignored
   on purpose: Next copies `.env.local` into it and keeps deleted keys.
 
@@ -67,11 +78,16 @@ next to it.
 
 ## Checking your work
 
-`npm run check`, then `npm run dev` and check the page in Edge. Headless screenshot:
+`npm run check`, then `npm run dev` and screenshot with the installed Edge:
 
 ```
-"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe" --headless=new --window-size=1280,900 --virtual-time-budget=8000 --screenshot=<scratchpad>\shot.png http://localhost:3000/catalog
+node tools/screenshot.mjs <outDir> tradeups --scan --click-first-row
+node tools/screenshot.mjs <outDir> deals --scan --click=Chart --width=390
 ```
+
+Pass page names without a leading slash (Git Bash rewrites `/deals`). If the dev overlay
+shows hydration errors after many edits, restart `npm run dev` before debugging: hot
+reloads leave stale HTML.
 
 POSTs from curl need `-H "Origin: http://localhost:3000"`.
 
@@ -84,13 +100,13 @@ POSTs from curl need `-H "Origin: http://localhost:3000"`.
 | M3  | Skin catalog (ByMykel) + catalog page with images                              | M    | ✅ done |
 | M4  | Skinport prices, sales history, snapshots, rate-limit cooldown                 | M    | ✅ done |
 | M5  | API keys popup + guide, `.env.local` saving, CSFloat listings                  | M    | ✅ done |
-| M6  | Currency conversion (free FX rates, picker)                                    | S    | next    |
-| M7  | Trade-up maths engine (rules, odds, scaled float, wear, fees, EV, ROI)         | M    |         |
-| M8  | Trade-up finder (cross-collection, fillers, float targets, tiers, owned skins) | M    |         |
-| M9  | Trade-up dashboard                                                             | M    |         |
-| M10 | Market imbalance scanner (below usual price, cross-market gaps)                | M    |         |
-| M11 | Price charts, dip and rebound detection, snapshot pruning                      | M    |         |
-| M12 | Special float flags                                                            | S    |         |
+| M6  | Currency conversion (free FX rates, picker)                                    | S    | ✅ done |
+| M7  | Trade-up maths engine (rules, odds, scaled float, wear, fees, EV, ROI)         | M    | ✅ done |
+| M8  | Trade-up finder (cross-collection, fillers, float targets, tiers, owned skins) | M    | ✅ done |
+| M9  | Trade-up dashboard                                                             | M    | ✅ done |
+| M10 | Market imbalance scanner (below usual price, cross-market gaps)                | M    | ✅ done |
+| M11 | Price charts, dip and rebound detection, snapshot pruning                      | M    | ✅ done |
+| M12 | Special float flags                                                            | S    | next    |
 | M13 | Tracker and portfolio                                                          | M    |         |
 | M14 | Timeline, cooldowns, "come back on", next steps                                | M    |         |
 | M15 | AI advisor (Gemini / OpenRouter / Groq, user keys)                             | M    |         |
@@ -100,13 +116,20 @@ POSTs from curl need `-H "Origin: http://localhost:3000"`.
 
 ## Current state
 
-- **Last done:** M1 to M5. 34 tests pass, build clean, checked live against Skinport
-  (37,288 prices) and ByMykel (2,126 skins).
-- **Next:** M6 currency. Rates from `https://open.er-api.com/v6/latest/USD` (free, no key,
-  has AED and CAD; checked 2026-11-17). Store rates in `meta`, refresh daily, picker in the
-  header, `formatMoney` takes the rate. Keep storage in USD cents.
+- **Last done:** M6 to M11. 67 tests pass. Checked live: trade-up scans take 0.3 to 1 s per
+  tier; safe contracts (risk filter on) show small real profits; no Covert contract passes
+  the risk filter because knife wears rarely sell 3+ times a month on Skinport.
+- **Next:** M12 special floats. Flag listings with very low floats (e.g. under 0.01, or
+  the lowest possible for that skin) and very high ones (BS near 1.0) as premium in the
+  CSFloat listings table and trade-up outputs. Needs a CSFloat key to see real listings.
+- **For M13 (tracker):** feed owned items into the finder as `InputOption` with
+  `owned: true` (cost = what they paid, or 0), so "use what I have" contracts appear.
+- **For M14:** trade hold after buying is about 7 days. Keep it as a setting.
+- **For M15:** check real Gemini model names in Google's docs before coding; the brief's
+  names may be made up.
 - **Open questions:** none.
 - **Known issues:** CSFloat response shape not checked against a real key (docs site was
-  down). The parser accepts both `[...]` and `{ data: [...] }`. Test with a real key.
-  Key guide steps for CSFloat are from memory.
-- **Not pushed:** everything. GitHub repo `imbalance` must be created first.
+  down). The parser accepts both `[...]` and `{ data: [...] }`. Key guide steps for CSFloat
+  are from memory. Sell prices are Skinport-based even when "Sell on Steam" is picked
+  (Steam prices are per-item only, see the Deals page Steam check).
+- **Not pushed:** see `git log origin/main..main`.

@@ -18,6 +18,7 @@ export async function GET(req: Request) {
       maxBuyCents: max ? Math.round(max * 100) : undefined,
       q: p.get("q")?.slice(0, 100) || undefined,
       weaponsOnly: p.get("weapons") !== "0",
+      dipsOnly: p.get("dips") === "1",
     }),
   });
 }
