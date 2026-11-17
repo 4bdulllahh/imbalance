@@ -27,35 +27,113 @@ on your PC.
 
 Prices show in your currency (pick it in the header). Dark and light themes.
 
-## Getting started
+## How to run it
 
-1. Install [Node.js 24](https://nodejs.org) and [Git](https://git-scm.com).
-2. Get the code and start it:
-   ```
-   git clone https://github.com/4bdulllahh/imbalance.git
-   cd imbalance
-   npm install
-   npm run dev
-   ```
-3. Open http://localhost:3000. A popup lists the optional API keys, what each one unlocks,
-   and how to get them (with steps and a video search link). You can skip it: the app works
-   with no keys at all.
-4. On the Dashboard, click **Update skin list**, then **Update prices**. Both take a few
+### 1. Install the tools (once)
+
+- **Node.js 24 or newer:** download the LTS installer from [nodejs.org](https://nodejs.org).
+- **Git:** download it from [git-scm.com](https://git-scm.com).
+
+Check both work by opening a terminal (on Windows: PowerShell or Windows Terminal) and running:
+
+```
+node -v
+git --version
+```
+
+`node -v` must print `v24` or higher.
+
+### 2. Download and start Imbalance
+
+```
+git clone https://github.com/4bdulllahh/imbalance.git
+cd imbalance
+npm install
+npm run dev
+```
+
+Leave that terminal open while you use the app. Then open **http://localhost:3000** in your
+browser. To stop it, press `Ctrl+C` in the terminal. To start it again later, open a terminal
+in the `imbalance` folder and run `npm run dev`.
+
+### 3. First run
+
+1. A popup lists the optional API keys. You can close it and add keys later (see below).
+2. On the **Dashboard**, click **Update skin list**, then **Update prices**. Both take a few
    seconds. Prices can be updated again every 5 minutes (Skinport's limit).
-5. Open **Trade-ups**, pick a rarity and click **Scan**.
+3. Open **Trade-ups**, pick a rarity and click **Scan**.
 
-To update later: `git pull`, then `npm install`. Your tracker and saved prices are kept.
+### Updating
 
-## API keys (all optional, all free)
+In the `imbalance` folder run `git pull`, then `npm install`. Your tracker and saved prices
+are kept.
 
-| Key                  | Unlocks                                  |
-| -------------------- | ---------------------------------------- |
-| `CSFLOAT_API_KEY`    | Live listings with exact floats          |
-| `GEMINI_API_KEY`     | AI advisor (Google Gemini)               |
-| `GROQ_API_KEY`       | AI advisor (Groq), if you have no Gemini |
-| `OPENROUTER_API_KEY` | AI advisor (free OpenRouter models)      |
+## Setting up the API keys
 
-Add them with the **API keys** button. They are saved to `.env.local`, which git ignores.
+**You don't need any keys to start.** Skin data (ByMykel CSGO-API), prices (Skinport) and
+exchange rates are free and need no key. Keys only unlock extras, and all of them are free.
+
+| Key                  | What it unlocks                    | Where to get it                                                  |
+| -------------------- | ---------------------------------- | ---------------------------------------------------------------- |
+| `CSFLOAT_API_KEY`    | Live listings with exact floats    | [csfloat.com/profile](https://csfloat.com/profile)               |
+| `GEMINI_API_KEY`     | AI advisor and plain-English Find  | [aistudio.google.com/apikey](https://aistudio.google.com/apikey) |
+| `GROQ_API_KEY`       | AI advisor (if you have no Gemini) | [console.groq.com/keys](https://console.groq.com/keys)           |
+| `OPENROUTER_API_KEY` | AI advisor (free models)           | [openrouter.ai/keys](https://openrouter.ai/keys)                 |
+
+For the AI you need just one of Gemini, Groq or OpenRouter. Gemini is the easiest. If you
+add more than one, Imbalance uses Gemini first, then Groq, then OpenRouter.
+
+### CSFloat (exact floats)
+
+1. Go to [csfloat.com](https://csfloat.com) and sign in with Steam.
+2. Open your profile and pick the **Developers** tab.
+3. Click **New Key**, give it any name, and copy the key.
+
+Stuck? [Video guides on YouTube](https://www.youtube.com/results?search_query=how+to+get+csfloat+api+key)
+
+### Google Gemini (AI, recommended)
+
+1. Go to [aistudio.google.com/apikey](https://aistudio.google.com/apikey) and sign in with a
+   Google account.
+2. Click **Create API key**.
+3. Copy the key.
+
+Stuck? [Video guides on YouTube](https://www.youtube.com/results?search_query=how+to+get+gemini+api+key+free+google+ai+studio)
+
+### Groq (AI)
+
+1. Go to [console.groq.com](https://console.groq.com) and sign in.
+2. Open **API Keys** and click **Create API Key**.
+3. Copy the key.
+
+Stuck? [Video guides on YouTube](https://www.youtube.com/results?search_query=how+to+get+groq+api+key)
+
+### OpenRouter (AI)
+
+1. Go to [openrouter.ai](https://openrouter.ai) and sign in.
+2. Open **Keys** and click **Create Key**.
+3. Copy the key.
+
+Stuck? [Video guides on YouTube](https://www.youtube.com/results?search_query=how+to+get+openrouter+api+key)
+
+### Adding a key to Imbalance
+
+**Easy way:** with the app running, click **API keys** in the top right, paste the key into
+its box and click **Save**. It works straight away, no restart needed.
+
+**By hand:** copy `.env.example` to a new file called `.env.local` in the `imbalance` folder
+and put your keys after the `=` signs:
+
+```
+CSFLOAT_API_KEY=your-csfloat-key
+GEMINI_API_KEY=your-gemini-key
+OPENROUTER_API_KEY=
+GROQ_API_KEY=
+```
+
+Leave a line empty if you don't have that key. `.env.local` is ignored by git, so your keys
+never get uploaded. Never paste your keys into an issue, a screenshot or a chat.
+
 The AI only comments on numbers Imbalance worked out. It never does the maths.
 
 ## Good to know
