@@ -8,7 +8,7 @@ stand, then carry on with the next milestone. The plan below is already approved
 
 A local CS2 market scanner: free skin data and prices in, profitable trade-ups and
 underpriced skins out, plus a tracker and "come back on" dates. It runs on the user's PC with
-`npm run dev`. Friends clone the repo and add their own free keys through a popup. No
+`npm start`. Friends clone the repo and add their own free keys through a popup. No
 hosting, no accounts, everything in a local SQLite file.
 
 | What                 | Where                                                                               |
@@ -23,7 +23,8 @@ hosting, no accounts, everything in a local SQLite file.
 ```
 npm install
 npm run check      # lint, format:check, typecheck, test, build
-npm run dev        # http://localhost:3000 (bound to localhost only)
+npm start          # build then run, fast pages (friends use this)
+npm run dev        # http://localhost:3000 (bound to localhost only), live reload
 ```
 
 ## How the code is organised

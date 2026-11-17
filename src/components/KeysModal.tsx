@@ -94,7 +94,7 @@ export function KeysModal() {
       <dialog
         ref={dialog}
         aria-labelledby="keys-title"
-        className="m-auto w-[min(42rem,calc(100%-2rem))] rounded-lg border border-line bg-panel p-0 text-text backdrop:bg-black/60"
+        className="m-auto w-[min(42rem,calc(100%-2rem))] overflow-hidden rounded-xl border border-line bg-panel p-0 text-text backdrop:bg-black/60"
         onCancel={close}
       >
         <div className="max-h-[85vh] overflow-y-auto p-5">

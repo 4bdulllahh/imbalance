@@ -3,6 +3,8 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
+  /* Native scrollbars, date pickers and selects follow the theme. */
+  color-scheme: light;
   --bg: #f7f4ee;
   --panel: #fffdf9;
   --border: #e4ddd0;
@@ -14,6 +16,7 @@
 }
 
 .dark {
+  color-scheme: dark;
   --bg: #12100e;
   --panel: #1b1916;
   --border: #322d27;
@@ -35,6 +38,11 @@
   --color-bad: var(--bad);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
 }
 
 body {

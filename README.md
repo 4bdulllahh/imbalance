@@ -49,16 +49,24 @@ git --version
 git clone https://github.com/4bdulllahh/imbalance.git
 cd imbalance
 npm install
-npm run dev
+npm start
 ```
 
+`npm start` builds the app, then runs it. The very first build takes about a minute; after
+that it starts in a few seconds and every page loads instantly.
+
+> **"16 high severity vulnerabilities" after `npm install`?** Safe to ignore. They are all one
+> issue in `picomatch`, used only by the developer tools (linter and tests), not by the app,
+> and no fixed version exists yet. Don't run `npm audit fix --force`: it downgrades those tools
+> and breaks them.
+
 > **Windows PowerShell says "running scripts is disabled on this system"?** Type `npm.cmd`
-> instead of `npm` (`npm.cmd install`, then `npm.cmd run dev`). Or fix it once for good by
+> instead of `npm` (`npm.cmd install`, then `npm.cmd start`). Or fix it once for good by
 > running `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` and answering `Y`.
 
 Leave that terminal open while you use the app. Then open **http://localhost:3000** in your
 browser. To stop it, press `Ctrl+C` in the terminal. To start it again later, open a terminal
-in the `imbalance` folder and run `npm run dev`.
+in the `imbalance` folder and run `npm start`.
 
 ### 3. First run
 
@@ -154,7 +162,7 @@ The AI only comments on numbers Imbalance worked out. It never does the maths.
 | "running scripts is disabled on this system"       | In PowerShell type `npm.cmd` instead of `npm`, or run `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` once |
 | `npm install` fails, or `node:sqlite` is not found | Run `node -v`. You need version 24 or newer                                                                      |
 | Port 3000 is in use                                | Close the other app, or run `npx next dev -H localhost -p 3001`                                                  |
-| Page stuck on "Loading" or keeps reloading         | Stop the app (Ctrl+C), delete the `.next` folder, run `npm run dev` again                                        |
+| Page stuck on "Loading" or keeps reloading         | Stop the app (Ctrl+C), delete the `.next` folder, run `npm start` again                                          |
 | "Too many requests"                                | Skinport allows about 8 requests per 5 minutes. Wait and try again                                               |
 
 ## Privacy
@@ -168,7 +176,7 @@ tracker is only sent to the AI when you ask it a question on the Dashboard.
 
 ```
 npm install
-npm run dev
+npm run dev       # live reload while you edit (slower: compiles each page on first visit)
 npm run check     # lint, format, typecheck, tests, build
 ```
 

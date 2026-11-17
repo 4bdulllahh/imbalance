@@ -3,7 +3,7 @@
 A local CS2 market scanner. It pulls skin data and prices from free APIs, finds profitable
 trade-up contracts (with exact float maths and marketplace fees) and underpriced skins,
 tracks what the user bought and sold, and says when to come back for the next step. Free
-personal tool for the owner and friends who clone the repo and run it with `npm run dev`.
+personal tool for the owner and friends who clone the repo and run it with `npm start`.
 Next.js + SQLite, nothing is hosted.
 
 **Read [handover.md](handover.md) before changing anything.** It has the milestone plan and
@@ -54,7 +54,8 @@ from training data, so read `node_modules/next/dist/docs/` before using a Next A
 
 ```
 npm install
-npm run dev          # http://localhost:3000
+npm start            # build (cached, ~6 s) then run: what friends use
+npm run dev          # http://localhost:3000, live reload
 npm run check        # lint, format check, typecheck, tests, build (what CI runs)
 npm test
 ```
