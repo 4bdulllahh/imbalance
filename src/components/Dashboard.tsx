@@ -12,6 +12,7 @@ import { formatAgo } from "@/lib/format";
 type FullStatus = Status & {
   keys: Record<string, boolean>;
   pricesCooldownMs: number;
+  limits: { skinportMinutes: number; autoUpdateMinutes: number };
 };
 
 export function Dashboard() {
@@ -148,8 +149,12 @@ export function Dashboard() {
           </button>
           {status && status.pricesCooldownMs > 0 && (
             <p className="mt-2 text-xs text-muted">
-              Skinport allows one refresh every 5 minutes. Next in{" "}
-              {Math.ceil(status.pricesCooldownMs / 60_000)} min.
+              Your limit is one Skinport update every{" "}
+              {status.limits.skinportMinutes} minutes (change it in{" "}
+              <Link href="/settings" className="underline">
+                Settings
+              </Link>
+              ). Next in {Math.ceil(status.pricesCooldownMs / 60_000)} min.
             </p>
           )}
         </div>

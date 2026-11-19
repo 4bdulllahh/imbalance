@@ -41,6 +41,12 @@ export type FinderOptions = {
   tier: Tier;
   market: Marketplace;
   budgetCents?: number;
+  /** Skip contracts cheaper than this (the budget's minimum). */
+  minBudgetCents?: number;
+  /** Keep only contracts this accepts (e.g. not risky). Checked before the limit. */
+  accept?: (c: FoundContract) => boolean;
+  /** How many of the best two-skin contracts to try a third skin in. */
+  mixDepth?: number;
   /** How many of the cheapest options to try as fillers. */
   fillerPool?: number;
   limit?: number;
@@ -71,22 +77,10 @@ export function findContracts(
   ];
   const found = new Map<string, FoundContract>();
 
-  const tryMix = (
-    target: InputOption,
-    k: number,
-    filler: InputOption | null,
-  ) => {
-    const parts =
-      filler && k < n
-        ? [
-            { option: target, count: k },
-            { option: filler, count: n - k },
-          ]
-        : [{ option: target, count: n }];
+  type Part = { option: InputOption; count: number };
+  const tryParts = (parts: Part[]) => {
     // Can't use 10 of something with only 3 listed (or 3 owned).
-    if (parts.some((p) => p.count > p.option.quantity)) return;
-    const cost = parts.reduce((s, p) => s + p.option.costCents * p.count, 0);
-    if (opts.budgetCents != null && cost > opts.budgetCents) return;
+    if (parts.some((p) => p.count < 1 || p.count > p.option.quantity)) return;
     const key = parts
       .map(
         (p) =>
@@ -113,14 +107,50 @@ export function findContracts(
   };
 
   for (const target of usable) {
-    tryMix(target, n, null);
+    tryParts([{ option: target, count: n }]);
     for (const filler of fillers) {
       if (filler === target) continue;
-      for (let k = 1; k < n; k++) tryMix(target, k, filler);
+      for (let k = 1; k < n; k++)
+        tryParts([
+          { option: target, count: k },
+          { option: filler, count: n - k },
+        ]);
     }
   }
 
+  // Three-skin mixes: take the best two-skin contracts and move some of the filler slots
+  // to a third skin, often from another collection. Mixing collections changes the odds
+  // (pool model) and the average float, which is how traders tune a contract.
+  const best = [...found.values()]
+    .filter((c) => c.inputs.length === 2 && (opts.accept?.(c) ?? true))
+    .sort((a, b) => b.result.profitCents - a.result.profitCents)
+    .slice(0, opts.mixDepth ?? 40);
+  const thirds = fillers.slice(0, 15);
+  for (const c of best) {
+    const [a, b] = c.inputs;
+    for (const third of thirds) {
+      if (third === a.option || third === b.option) continue;
+      for (let m = 1; m < b.count; m++)
+        tryParts([
+          a,
+          { ...b, count: b.count - m },
+          { option: third, count: m },
+        ]);
+      for (let m = 1; m < a.count; m++)
+        tryParts([
+          { ...a, count: a.count - m },
+          b,
+          { option: third, count: m },
+        ]);
+    }
+  }
+
+  // Budget is checked last: an over-budget two-skin mix can still seed a cheaper three-skin one.
+  const inBudget = (c: FoundContract) =>
+    (opts.budgetCents == null || c.result.costCents <= opts.budgetCents) &&
+    (opts.minBudgetCents == null || c.result.costCents >= opts.minBudgetCents);
   return [...found.values()]
+    .filter((c) => inBudget(c) && (opts.accept?.(c) ?? true))
     .sort((a, b) => b.result.profitCents - a.result.profitCents)
     .slice(0, opts.limit ?? 100);
 }

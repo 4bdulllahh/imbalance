@@ -11,6 +11,7 @@ const LINKS = [
   { href: "/deals", label: "Deals" },
   { href: "/catalog", label: "Skins" },
   { href: "/tracker", label: "Tracker" },
+  { href: "/settings", label: "Settings" },
 ];
 
 function toggleTheme() {
@@ -24,7 +25,7 @@ export function Header() {
   const path = usePathname();
   return (
     <header className="border-b border-line bg-panel">
-      <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3">
+      <div className="mx-auto flex max-w-[88rem] flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3">
         <Link
           href="/"
           className="flex items-center gap-2 text-lg font-extrabold tracking-tight"
@@ -33,7 +34,10 @@ export function Header() {
           <img src="/logo.svg" alt="" width={32} height={32} />
           Imbalance
         </Link>
-        <nav aria-label="Main" className="flex gap-4 text-sm">
+        <nav
+          aria-label="Main"
+          className="order-last -mx-4 flex w-[calc(100%+2rem)] gap-4 overflow-x-auto px-4 text-sm whitespace-nowrap md:order-none md:mx-0 md:w-auto md:px-0"
+        >
           {LINKS.map((l) => (
             <Link
               key={l.href}

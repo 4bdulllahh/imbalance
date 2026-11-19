@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { connection } from "next/server";
 import { getDb } from "@/lib/db";
-import { baseSkinName } from "@/lib/deals";
+import { baseSkinName, skinLookup } from "@/lib/deals";
 import { MARKETPLACE_IDS, MARKETPLACES } from "@/lib/fees";
 import { isSameOrigin } from "@/lib/same-origin";
 import { priceLookup } from "@/lib/tradeup-data";
@@ -27,19 +27,13 @@ export async function GET() {
   const settings = getSettings(db);
   const lookup = priceLookup(db);
   const market = MARKETPLACES[settings.sellMarket];
-  const images = new Map(
-    (
-      db.prepare("SELECT name, image FROM skins").all() as {
-        name: string;
-        image: string | null;
-      }[]
-    ).map((r) => [r.name, r.image]),
-  );
+  const skins = skinLookup(db);
   const holdings = listHoldings(db).map((h) => {
     const { sellCents, volume30d } = lookup(h.marketHashName, h.version);
     return {
       ...h,
-      image: images.get(baseSkinName(h.marketHashName)) ?? null,
+      image: skins.get(baseSkinName(h.marketHashName))?.image ?? null,
+      rarity: skins.get(baseSkinName(h.marketHashName))?.rarity ?? null,
       valueCents: sellCents == null ? null : market.net(sellCents),
       volume30d,
     };

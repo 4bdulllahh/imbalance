@@ -74,6 +74,36 @@ describe("findContracts", () => {
     expect(best.result.profitCents).toBeGreaterThan(0);
   });
 
+  it("mixes a third skin from another collection when listings run short", () => {
+    const three = new Map([
+      ["GOLD", [out("jackpot", "GOLD")]],
+      ["JUNK", [out("dud1", "JUNK")]],
+      ["JUNK2", [out("dud3", "JUNK2")]],
+    ]);
+    const found = findContracts(
+      [
+        opt("GOLD", 1000),
+        { ...opt("JUNK", 10), quantity: 3 },
+        { ...opt("JUNK2", 10), quantity: 3 },
+      ],
+      three,
+      (s) => ({ jackpot: 50000, dud1: 10, dud3: 10 })[s.id] ?? null,
+      {
+        tier: "Restricted",
+        market: noFee,
+        budgetCents: 7000,
+        minBudgetCents: 4000,
+      },
+    );
+    // Two-skin mixes need 7+ GOLD (only 3 of each filler listed), which is over budget.
+    expect(found.length).toBeGreaterThan(0);
+    for (const f of found) {
+      expect(f.inputs).toHaveLength(3);
+      expect(f.result.costCents).toBeLessThanOrEqual(7000);
+      expect(f.result.costCents).toBeGreaterThanOrEqual(4000);
+    }
+  });
+
   it("never needs more of a skin than is listed or owned", () => {
     const scarce = { ...opt("GOLD", 300), quantity: 3 };
     const found = findContracts([scarce, opt("JUNK", 50)], outcomes, price, {

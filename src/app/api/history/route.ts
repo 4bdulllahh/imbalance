@@ -1,7 +1,13 @@
 import { getDb } from "@/lib/db";
+import { getKey } from "@/lib/keys";
+import { dailyHistory } from "@/lib/prices/csfloat-history";
+import { recoveryOdds } from "@/lib/recovery";
 import { classifyTrend, snapshotSeries } from "@/lib/trend";
 
-/** Chart data for one item: our snapshots plus Skinport's sales medians and a trend signal. */
+/**
+ * Chart data for one item: CSFloat's daily sales back to 2020, our own Skinport snapshots,
+ * Skinport's sales medians, a trend signal, and how often past drops like today's came back.
+ */
 export async function GET(req: Request) {
   const p = new URL(req.url).searchParams;
   const name = p.get("name")?.slice(0, 200);
@@ -24,7 +30,17 @@ export async function GET(req: Request) {
     median30d: row?.median_30d ?? null,
     median90d: row?.median_90d ?? null,
   };
+  const daily = await dailyHistory(db, name, getKey("CSFLOAT_API_KEY"));
+  const nowCents = row?.min_cents ?? null;
+  // Skinport's own drop (now vs its 30-day median), checked against CSFloat's long history.
+  const drop =
+    nowCents != null && medians.median30d
+      ? 1 - nowCents / medians.median30d
+      : undefined;
   return Response.json({
+    daily: daily.points,
+    dailyError: daily.error ?? null,
+    recovery: recoveryOdds(daily.points, nowCents, drop),
     points: snapshotSeries(db, name, version),
     nowCents: row?.min_cents ?? null,
     ...medians,

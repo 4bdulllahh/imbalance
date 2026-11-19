@@ -3,6 +3,7 @@ import Script from "next/script";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Header } from "@/components/Header";
 import { MoneyProvider } from "@/components/Money";
+import { Background } from "@/components/Background";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -41,7 +42,8 @@ export default function RootLayout({
         </Script>
         <MoneyProvider>
           <Header />
-          <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6">
+          <Background />
+          <main className="mx-auto w-full max-w-[88rem] flex-1 px-4 py-6">
             {children}
           </main>
         </MoneyProvider>

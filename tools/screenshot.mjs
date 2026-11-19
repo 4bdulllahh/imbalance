@@ -28,7 +28,7 @@ if (clickText) {
 }
 if (flags.includes("--click-first-row")) {
   await page.locator("table tbody tr").first().click();
-  await page.waitForSelector('[role="dialog"]');
+  await page.waitForSelector('dialog[open], [role="dialog"]');
   await page.waitForTimeout(1500);
 }
 const name = `${outDir}/shot-${path.replace(/\W+/g, "") || "home"}-${width}${light ? "-light" : ""}${flags.includes("--click-first-row") || clickText ? "-detail" : ""}.png`;

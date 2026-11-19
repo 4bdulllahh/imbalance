@@ -121,8 +121,48 @@ POSTs from curl need `-H "Origin: http://localhost:3000"`.
 | M16 | Ask box: plain English to filters                                              | S    | ✅ done |
 | M17 | Design pass: taste-skill, then impeccable                                      | M    | ✅ done |
 | M18 | Ready for friends: full README, fresh-clone test                               | S    | ✅ done |
+| M19 | Owner feedback pass: popups, filters, sorting, charts, limiter, dev tools      | L    | ✅ done |
 
 ## Current state
+
+- **M19 (2026-11-19), owner feedback pass:**
+  - Every side drawer is now a centered `Modal` (`src/components/ui.tsx`, native `<dialog>`).
+    `ui.tsx` also has `SkinName` (rarity colour), `useSort` + `SortTh` (click a header to
+    sort), `Field`, `Stat`, `numeric`.
+  - Trade-ups: filter bar at the top (rarity dropdown, Normal/StatTrak, sell market, min and
+    max spend in the shown currency). Columns: cost, expected back, profit, ROI, chance, no
+    fee, after Steam, after Skinport, after CSFloat (2xl only), best, worst, days, risk. The
+    popup copies the YouTube trade-up tools: stat tiles (with and without fees), outcome
+    cards (green border = profit), input cards with Skinport links.
+  - Finder tries three-skin mixes: the best 40 two-skin contracts get some slots moved to
+    one of the 15 cheapest fillers. Budget and `accept` (hide risky) are checked before
+    the limit, so risky mixes can't crowd out safe ones. Scans are cached in memory until
+    prices, settings or holdings change (Covert: ~3.7 s first, ~0.1 s after).
+  - Deals: same filter bar plus min price, sortable, Listed, After Steam/Skinport/CSFloat
+    and ROI columns. Click any row for the chart.
+  - Charts: CSFloat's public `/api/v1/history/<name>/graph` (no key, daily avg sale + count
+    back to 2020) saved in `daily_history` (schema v3), refreshed every 12 h. Range buttons
+    1M to All, sales bars underneath. `src/lib/recovery.ts` counts past drops as deep as
+    today's (Skinport drop vs its 30-day median) and how many came back within 7/30/90
+    days. Code-only counting, labelled as a rough hint when under 4 cases. Steam's listing
+    page no longer embeds history without login, so Steam isn't used for charts.
+  - Skins page: rarity, type, weapon, collection, min/max price, Has StatTrak, sort. The
+    cheapest price is a range scan on the prices primary key, so the query stays ~0.2 s.
+  - Settings page (`/settings`): API limits saved in meta `api_limits` (`src/lib/limiter.ts`
+    has the zod schema and floors: Skinport 5 min, Steam 3 s). Every outside call goes
+    through `fetchJson`, which waits its turn per host and logs host, path (never the
+    query: keys), status and time. Optional auto update of prices while a tab is open
+    (`Background.tsx`).
+  - Dev tools page (`/debug`): versions, DB tables, keys set or not, limits, server errors
+    (from `errorResponse`), browser errors (console.error and uncaught, captured by
+    `Background.tsx`), outside API calls, health checks, and "Copy report for Claude".
+  - Names show in rarity colour (knives and gloves gold) in trade-ups, deals, skins, tracker.
+    Dropdowns use a themed chevron (`select.input` in `globals.css`).
+  - Layout is `max-w-[88rem]` (was 6xl) so the trade-up table fits a 1366 px laptop.
+    Lower-priority columns hide at md/lg/xl/2xl. Phones scroll the table sideways.
+  - The "Slow filesystem detected" line in `npm run dev` comes from Turbopack's own
+    benchmark of the E: drive and can't be turned off. `npm start` doesn't do it and serves
+    pages much faster.
 
 - **Last done:** all milestones M1 to M18. 86 tests pass. M16 finished: the Dashboard
   "Find" box sends plain English to the AI with `FILTERS_PROMPT`, `parseFilters` validates

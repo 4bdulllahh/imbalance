@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import type { Deal } from "@/lib/deals";
 import type { SteamPrice } from "@/lib/prices/steam";
 import {
@@ -15,6 +15,21 @@ import { AskAi } from "./AskAi";
 import { useSearchParams } from "next/navigation";
 import { urlFlag, urlNumber } from "@/lib/filters";
 import { PriceHistory, TrendBadge } from "./PriceHistory";
+import { Field, Modal, numeric, SkinName, SortTh, useSort } from "./ui";
+
+const DEAL_COLUMNS = {
+  name: (d: Deal) => d.marketHashName,
+  buy: (d: Deal) => d.buyCents,
+  usual: (d: Deal) => d.usualCents,
+  below: (d: Deal) => d.discount,
+  sold: (d: Deal) => d.volume30d,
+  listed: (d: Deal) => d.quantity,
+  steam: (d: Deal) => MARKETPLACES.steam.net(d.usualCents),
+  skinport: (d: Deal) => MARKETPLACES.skinport.net(d.usualCents),
+  csfloat: (d: Deal) => MARKETPLACES.csfloat.net(d.usualCents),
+  profit: (d: Deal) => d.flipProfitCents,
+  roi: (d: Deal) => d.flipProfitCents / d.buyCents,
+};
 
 export function Deals() {
   const { money, rates, currency } = useMoney();
@@ -31,6 +46,7 @@ export function Deals() {
     urlNumber(params, "minVolume", "10"),
   );
   const [max, setMax] = useState(() => urlNumber(params, "max", ""));
+  const [min, setMin] = useState(() => urlNumber(params, "min", ""));
   const [q, setQ] = useState(() => params.get("q")?.slice(0, 100) ?? "");
   const [weapons, setWeapons] = useState(() =>
     urlFlag(params, "weapons", true),
@@ -46,12 +62,13 @@ export function Deals() {
   async function scan() {
     setState({ loading: true });
     try {
-      const usdMax = max ? Number(max) / (rates[currency] ?? 1) : 0;
+      const usd = (v: string) => (v ? Number(v) / (rates[currency] ?? 1) : 0);
       const params = new URLSearchParams({
         market,
         minDiscount,
         minVolume,
-        max: String(usdMax || ""),
+        max: String(usd(max) || ""),
+        min: String(usd(min) || ""),
         q,
         weapons: weapons ? "1" : "0",
         dips: dips ? "1" : "0",
@@ -70,7 +87,9 @@ export function Deals() {
 
   const num =
     (set: (v: string) => void) => (e: React.ChangeEvent<HTMLInputElement>) =>
-      set(e.target.value.replace(/[^\d.]/g, ""));
+      set(numeric(e.target.value));
+  const rows = useMemo(() => state.deals ?? [], [state.deals]);
+  const sort = useSort(rows, DEAL_COLUMNS, "profit");
 
   return (
     <div className="space-y-4">
@@ -90,18 +109,22 @@ export function Deals() {
         </p>
       )}
 
-      <div className="flex flex-wrap items-end gap-3 text-sm">
-        <label className="flex flex-col gap-1">
-          <span className="text-muted">Search</span>
+      <form
+        className="panel grid grid-cols-2 items-end gap-3 p-3 sm:grid-cols-4 lg:grid-cols-[1.6fr_1fr_0.8fr_0.8fr_0.8fr_0.8fr_auto]"
+        onSubmit={(e) => {
+          e.preventDefault();
+          void scan();
+        }}
+      >
+        <Field label="Search" className="col-span-2 sm:col-span-1">
           <input
-            className="input w-44"
+            className="input"
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Any item"
           />
-        </label>
-        <label className="flex flex-col gap-1">
-          <span className="text-muted">Resell on</span>
+        </Field>
+        <Field label="Resell on">
           <select
             className="input"
             value={market}
@@ -113,62 +136,66 @@ export function Deals() {
               </option>
             ))}
           </select>
-        </label>
-        <label className="flex flex-col gap-1">
-          <span className="text-muted">Min % below usual</span>
+        </Field>
+        <Field label={`Min price (${currency})`}>
           <input
-            className="input w-20"
+            className="input"
             inputMode="decimal"
-            value={minDiscount}
-            onChange={num(setMinDiscount)}
+            value={min}
+            onChange={num(setMin)}
+            placeholder="0"
           />
-        </label>
-        <label className="flex flex-col gap-1">
-          <span className="text-muted">Min sold in 30 days</span>
+        </Field>
+        <Field label={`Max price (${currency})`}>
           <input
-            className="input w-20"
-            inputMode="numeric"
-            value={minVolume}
-            onChange={num(setMinVolume)}
-          />
-        </label>
-        <label className="flex flex-col gap-1">
-          <span className="text-muted">Max price ({currency})</span>
-          <input
-            className="input w-24"
+            className="input"
             inputMode="decimal"
             value={max}
             onChange={num(setMax)}
             placeholder="Any"
           />
-        </label>
-        <label className="flex items-center gap-2">
+        </Field>
+        <Field label="Min % below usual">
           <input
-            type="checkbox"
-            checked={weapons}
-            onChange={(e) => setWeapons(e.target.checked)}
+            className="input"
+            inputMode="decimal"
+            value={minDiscount}
+            onChange={num(setMinDiscount)}
           />
-          Weapon skins only
-        </label>
-        <label
-          className="flex items-center gap-2"
-          title="Short drops against a steady long-term price, which tend to correct"
-        >
+        </Field>
+        <Field label="Min sold in 30 days">
           <input
-            type="checkbox"
-            checked={dips}
-            onChange={(e) => setDips(e.target.checked)}
+            className="input"
+            inputMode="numeric"
+            value={minVolume}
+            onChange={num(setMinVolume)}
           />
-          Dips only
-        </label>
-        <button
-          className="btn-primary"
-          disabled={state.loading}
-          onClick={() => void scan()}
-        >
+        </Field>
+        <button className="btn-primary h-[34px]" disabled={state.loading}>
           {state.loading ? "Scanning..." : "Find deals"}
         </button>
-      </div>
+        <div className="col-span-full flex flex-wrap gap-4 text-sm">
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={weapons}
+              onChange={(e) => setWeapons(e.target.checked)}
+            />
+            Weapon skins only
+          </label>
+          <label
+            className="flex items-center gap-2"
+            title="Short drops against a steady long-term price, which tend to correct"
+          >
+            <input
+              type="checkbox"
+              checked={dips}
+              onChange={(e) => setDips(e.target.checked)}
+            />
+            Dips only
+          </label>
+        </div>
+      </form>
 
       {state.error && <p className="text-sm text-bad">{state.error}</p>}
       {state.deals?.length === 0 && (
@@ -178,102 +205,163 @@ export function Deals() {
         </p>
       )}
 
-      {state.deals && state.deals.length > 0 && (
-        <div className="panel overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="text-left text-muted">
-              <tr>
-                <th className="p-2 font-normal">Item</th>
-                <th className="p-2 font-normal">Buy now</th>
-                <th className="p-2 font-normal">Usually</th>
-                <th className="p-2 font-normal">Below</th>
-                <th className="p-2 font-normal">Sold 30d</th>
-                <th className="p-2 font-normal">Flip profit</th>
-                <th className="p-2 font-normal">Steam</th>
-              </tr>
-            </thead>
-            <tbody>
-              {state.deals.map((d) => (
-                <tr
-                  key={`${d.marketHashName}|${d.version}`}
-                  className="border-t border-line"
-                >
-                  <td className="p-2">
-                    <div className="flex items-center gap-2">
-                      {d.image && (
-                        <Image
-                          src={d.image}
-                          alt=""
-                          width={64}
-                          height={48}
-                          className="h-8 w-auto"
-                        />
-                      )}
-                      <span>
-                        <a
-                          className="hover:underline"
-                          href={`https://skinport.com/market?search=${encodeURIComponent(d.marketHashName)}`}
-                          target="_blank"
-                          rel="noreferrer"
-                        >
-                          {d.marketHashName}
-                          {d.version ? ` (${d.version})` : ""}
-                        </a>
-                        <TrendBadge trend={d.trend} />
-                        <button
-                          className="ml-2 text-xs text-accent underline"
-                          onClick={() => setChart(d)}
-                        >
-                          Chart
-                        </button>
-                      </span>
-                    </div>
-                  </td>
-                  <td className="p-2">{money(d.buyCents)}</td>
-                  <td className="p-2">{money(d.usualCents)}</td>
-                  <td className="p-2">{Math.round(d.discount * 100)}%</td>
-                  <td className="p-2">{d.volume30d}</td>
-                  <td className="p-2 font-medium text-good">
-                    {money(d.flipProfitCents)}
-                  </td>
-                  <td className="p-2">
-                    <SteamCheck name={d.marketHashName} buyCents={d.buyCents} />
-                  </td>
+      {rows.length > 0 && (
+        <>
+          <p className="text-sm text-muted">
+            {rows.length} deals. Click a column to sort, click an item for its
+            price chart. Resale columns assume selling at the usual price.
+          </p>
+          <div className="panel overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="text-left text-muted">
+                <tr>
+                  <SortTh k="name" sort={sort}>
+                    Item
+                  </SortTh>
+                  <SortTh k="buy" sort={sort}>
+                    Buy now
+                  </SortTh>
+                  <SortTh
+                    k="usual"
+                    sort={sort}
+                    title="Median sale price over the last 30 days"
+                  >
+                    Usually
+                  </SortTh>
+                  <SortTh k="below" sort={sort}>
+                    Below
+                  </SortTh>
+                  <SortTh k="sold" sort={sort}>
+                    Sold 30d
+                  </SortTh>
+                  <SortTh
+                    k="listed"
+                    sort={sort}
+                    title="Listings on Skinport right now"
+                    className="hidden lg:table-cell"
+                  >
+                    Listed
+                  </SortTh>
+                  <SortTh
+                    k="steam"
+                    sort={sort}
+                    title="What you keep selling at the usual price on Steam (about 13% fee)"
+                    className="hidden xl:table-cell"
+                  >
+                    After Steam
+                  </SortTh>
+                  <SortTh
+                    k="skinport"
+                    sort={sort}
+                    title="What you keep selling at the usual price on Skinport (8% fee)"
+                    className="hidden xl:table-cell"
+                  >
+                    After Skinport
+                  </SortTh>
+                  <SortTh
+                    k="csfloat"
+                    sort={sort}
+                    title="What you keep selling at the usual price on CSFloat (2% fee)"
+                    className="hidden xl:table-cell"
+                  >
+                    After CSFloat
+                  </SortTh>
+                  <SortTh
+                    k="profit"
+                    sort={sort}
+                    title="Resale after the chosen market's fee, minus what you pay"
+                  >
+                    Flip profit
+                  </SortTh>
+                  <SortTh k="roi" sort={sort} className="hidden md:table-cell">
+                    ROI
+                  </SortTh>
+                  <th className="p-2 font-normal whitespace-nowrap">
+                    Steam now
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {sort.sorted.map((d) => (
+                  <tr
+                    key={`${d.marketHashName}|${d.version}`}
+                    className="cursor-pointer border-t border-line hover:bg-bg"
+                    onClick={() => setChart(d)}
+                  >
+                    <td className="p-2">
+                      <button
+                        className="flex items-center gap-2 text-left hover:underline"
+                        onClick={() => setChart(d)}
+                        title="Show price chart"
+                      >
+                        {d.image && (
+                          <Image
+                            src={d.image}
+                            alt=""
+                            width={64}
+                            height={48}
+                            className="h-8 w-auto"
+                          />
+                        )}
+                        <span>
+                          <SkinName name={d.marketHashName} rarity={d.rarity} />
+                          {d.version ? ` (${d.version})` : ""}
+                          <TrendBadge trend={d.trend} />
+                        </span>
+                      </button>
+                    </td>
+                    <td className="p-2 whitespace-nowrap">
+                      {money(d.buyCents)}
+                    </td>
+                    <td className="p-2 whitespace-nowrap">
+                      {money(d.usualCents)}
+                    </td>
+                    <td className="p-2">{Math.round(d.discount * 100)}%</td>
+                    <td className="p-2">{d.volume30d}</td>
+                    <td className="hidden p-2 lg:table-cell">{d.quantity}</td>
+                    <td className="hidden p-2 whitespace-nowrap xl:table-cell">
+                      {money(MARKETPLACES.steam.net(d.usualCents))}
+                    </td>
+                    <td className="hidden p-2 whitespace-nowrap xl:table-cell">
+                      {money(MARKETPLACES.skinport.net(d.usualCents))}
+                    </td>
+                    <td className="hidden p-2 whitespace-nowrap xl:table-cell">
+                      {money(MARKETPLACES.csfloat.net(d.usualCents))}
+                    </td>
+                    <td className="p-2 font-medium whitespace-nowrap text-good">
+                      {money(d.flipProfitCents)}
+                    </td>
+                    <td className="hidden p-2 text-good md:table-cell">
+                      {Math.round((d.flipProfitCents / d.buyCents) * 100)}%
+                    </td>
+                    <td className="p-2 whitespace-nowrap">
+                      <SteamCheck
+                        name={d.marketHashName}
+                        buyCents={d.buyCents}
+                      />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
       {chart && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-label={`Price history: ${chart.marketHashName}`}
-          className="fixed inset-0 z-10 flex justify-end bg-black/60"
-          onClick={() => setChart(null)}
+        <Modal
+          onClose={() => setChart(null)}
+          title={
+            <SkinName
+              name={`${chart.marketHashName}${chart.version ? ` (${chart.version})` : ""}`}
+              rarity={chart.rarity}
+            />
+          }
         >
-          <div
-            className="h-full w-full max-w-lg overflow-y-auto border-l border-line bg-panel p-5"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              className="btn float-right"
-              onClick={() => setChart(null)}
-              autoFocus
-            >
-              Close
-            </button>
-            <h2 className="mb-3 text-lg font-semibold">
-              {chart.marketHashName}
-              {chart.version ? ` (${chart.version})` : ""}
-            </h2>
-            <PriceHistory name={chart.marketHashName} version={chart.version} />
-            <div className="mt-4">
-              <AskAi topic="deal" data={chart} />
-            </div>
+          <PriceHistory name={chart.marketHashName} version={chart.version} />
+          <div className="mt-4">
+            <AskAi topic="deal" data={chart} />
           </div>
-        </div>
+        </Modal>
       )}
     </div>
   );
@@ -306,7 +394,13 @@ function SteamCheck({ name, buyCents }: { name: string; buyCents: number }) {
 
   if (!state)
     return (
-      <button className="text-accent underline" onClick={() => void check()}>
+      <button
+        className="text-accent underline"
+        onClick={(e) => {
+          e.stopPropagation();
+          void check();
+        }}
+      >
         Check
       </button>
     );

@@ -1,6 +1,7 @@
 import { DatabaseSync } from "node:sqlite";
 import { mkdirSync } from "node:fs";
 import path from "node:path";
+import { applyLimits, parseLimits, type ApiLimits } from "./limiter";
 
 /**
  * Each entry upgrades the schema by one version. Never edit a shipped entry: friends update
@@ -123,6 +124,23 @@ const MIGRATIONS: string[] = [
   );
   CREATE INDEX holdings_status ON holdings (status);
   `,
+  // v3: daily sales history per item (CSFloat), for long price charts and recovery odds.
+  `
+  CREATE TABLE daily_history (
+    market_hash_name TEXT NOT NULL,
+    source TEXT NOT NULL,
+    day INTEGER NOT NULL,
+    avg_cents INTEGER NOT NULL,
+    sales INTEGER NOT NULL,
+    PRIMARY KEY (market_hash_name, source, day)
+  );
+  CREATE TABLE daily_history_fetch (
+    market_hash_name TEXT NOT NULL,
+    source TEXT NOT NULL,
+    fetched_at INTEGER NOT NULL,
+    PRIMARY KEY (market_hash_name, source)
+  );
+  `,
 ];
 
 export const SCHEMA_VERSION = MIGRATIONS.length;
@@ -177,11 +195,26 @@ const globalForDb = globalThis as unknown as { imbalanceDb?: DatabaseSync };
 
 /** The app's shared database. Cached on globalThis so dev hot reloads reuse one connection. */
 export function getDb(): DatabaseSync {
-  globalForDb.imbalanceDb ??= openDb(
-    process.env.IMBALANCE_DB ??
-      path.join(process.cwd(), "data", "imbalance.db"),
-  );
+  if (!globalForDb.imbalanceDb) {
+    globalForDb.imbalanceDb = openDb(
+      process.env.IMBALANCE_DB ??
+        path.join(process.cwd(), "data", "imbalance.db"),
+    );
+    getLimits(globalForDb.imbalanceDb);
+  }
   return globalForDb.imbalanceDb;
+}
+
+/** The user's API limits, saved in meta, also handed to the request limiter. */
+export function getLimits(db: DatabaseSync): ApiLimits {
+  const l = parseLimits(getMeta(db, "api_limits"));
+  applyLimits(l);
+  return l;
+}
+
+export function saveLimits(db: DatabaseSync, l: ApiLimits): void {
+  setMeta(db, "api_limits", JSON.stringify(l));
+  applyLimits(l);
 }
 
 export function getMeta(db: DatabaseSync, key: string): string | undefined {

@@ -62,3 +62,24 @@ body {
 .input {
   @apply rounded-lg border border-line bg-bg px-3 py-1.5 text-sm focus-visible:outline-2 focus-visible:outline-accent;
 }
+
+/* Themed dropdowns: own chevron, aligned with the text, no native look. */
+select.input {
+  appearance: none;
+  padding-right: 2rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none' stroke='%236b6258' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 4.5 6 7.5 9 4.5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.6rem center;
+  background-size: 0.75rem;
+  cursor: pointer;
+}
+.dark select.input {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none' stroke='%23a69c8f' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 4.5 6 7.5 9 4.5'/%3E%3C/svg%3E");
+}
+select.input:hover {
+  border-color: var(--accent);
+}
+select.input option {
+  background: var(--panel);
+  color: var(--text);
+}

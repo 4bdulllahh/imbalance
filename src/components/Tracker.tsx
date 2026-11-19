@@ -7,9 +7,11 @@ import type { NextStep } from "@/lib/timeline";
 import { MARKETPLACES, type MarketplaceId } from "@/lib/fees";
 import { useMoney } from "./Money";
 import { FloatBadges } from "./FloatBadges";
+import { nameColor } from "@/lib/rarity";
 
 type Row = Holding & {
   image: string | null;
+  rarity: string | null;
   valueCents: number | null;
   volume30d: number;
 };
@@ -198,7 +200,13 @@ export function Tracker() {
                           />
                         )}
                         <span>
-                          {h.marketHashName}
+                          <span
+                            style={{
+                              color: nameColor(h.marketHashName, h.rarity),
+                            }}
+                          >
+                            {h.marketHashName}
+                          </span>
                           {h.float != null && (
                             <span className="block font-mono text-xs text-muted">
                               {h.float.toFixed(6)}
